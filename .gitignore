@@ -1,10 +1,6 @@
 .venv/
-*.pyc
-__pycache__/
-*.session
-session.*
-downloads/
 .env
-.idea/
-.vscode/
-*.log
+# Telethon / session files
+*.session
+# Local config with private IDs or invite links — do not commit
+config.json
