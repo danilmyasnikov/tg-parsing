@@ -1,4 +1,5 @@
 # Generated from `pip freeze` on 2026-01-25
+# Python >= 3.10 is required for this project
 pyaes==1.6.1
 pyasn1==0.6.2
 rsa==4.9.1

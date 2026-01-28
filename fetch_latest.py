@@ -10,8 +10,17 @@ import json
 import pathlib
 import asyncio
 import argparse
+from typing import TypedDict, Any
 from telethon import TelegramClient, errors
 from telethon.tl.functions.messages import ImportChatInviteRequest
+from telethon.tl.types import User, Chat, Channel
+from telethon.tl.custom.message import Message
+
+class Config(TypedDict, total=False):
+    targets: list[str]
+
+
+Entity = User | Chat | Channel
 
 # Optional .env support: will load if python-dotenv is installed
 try:
@@ -21,19 +30,40 @@ try:
 except ImportError:
     DOTENV_AVAILABLE = False
 
+api_id: str | None = os.getenv("TG_API_ID")
+api_hash: str | None = os.getenv("TG_API_HASH")
+
+if api_id is None:
+    raise RuntimeError("TG_API_ID environment variable is not set")
+
+if api_hash is None:
+    raise RuntimeError("TG_API_HASH environment variable is not set")
+
+try:
+    api_id_int: int = int(api_id)
+except ValueError:
+    raise RuntimeError("TG_API_ID must be an integer")
+
+
+
+
+CONFIG_TARGETS: list[str] = []
+
+
 # Optional config file with target dialog ids/usernames
-CONFIG_TARGETS = []
-cfg_path = pathlib.Path('config.json')
-if cfg_path.exists():
-    try:
-        cfg = json.loads(cfg_path.read_text())
-        if isinstance(cfg, dict):
-            CONFIG_TARGETS = cfg.get('targets', []) or []
-    except Exception as e:
-        print('Warning: failed to read config.json:', e)
+def load_config() -> Config:
+    cfg_path: pathlib.Path = pathlib.Path('config.json')
+    if cfg_path.exists():
+        try:
+            cfg: Config = json.loads(cfg_path.read_text())
+            if isinstance(cfg, dict):
+                return cfg.get('targets', []) or []
+        except Exception as e:
+            print('Warning: failed to read config.json:', e)
 
+CONFIG_TARGETS = load_config()
 
-async def choose_dialog(client, limit: int = 50):
+async def choose_dialog(client: TelegramClient, limit: int = 50) -> Entity | None:
     """List dialogs and prompt the user to choose one. Returns the entity."""
     dialogs = [d async for d in client.iter_dialogs(limit=limit)]
     if not dialogs:
@@ -42,8 +72,8 @@ async def choose_dialog(client, limit: int = 50):
 
     for i, d in enumerate(dialogs, 1):
         e = d.entity
-        name = getattr(e, 'title', None) or getattr(e, 'first_name', None) or getattr(e, 'username', None) or str(e)
-        extra = []
+        name: str = getattr(e, 'title', None) or getattr(e, 'first_name', None) or getattr(e, 'username', None) or str(e)
+        extra: list[str] = []
         if getattr(e, 'username', None):
             extra.append(f'@{e.username}')
         if getattr(e, 'id', None):
@@ -51,22 +81,20 @@ async def choose_dialog(client, limit: int = 50):
         print(f'{i:3d}) {name} {" ".join(extra)}')
 
     while True:
-        choice = input(f'Select dialog [1-{len(dialogs)}] (or q to cancel): ').strip()
+        choice: str = input(f'Select dialog [1-{len(dialogs)}] (or q to cancel): ').strip()
         if choice.lower() in ('q', 'quit', 'exit'):
             return None
         if not choice:
             continue
         try:
-            idx = int(choice)
+            idx: int = int(choice)
             if 1 <= idx <= len(dialogs):
                 return dialogs[idx - 1].entity
         except ValueError:
             print('Please enter a number or q to cancel.')
 
 
-async def main(target: str = None, session: str = 'session'):
-    api_id = os.getenv('TG_API_ID')
-    api_hash = os.getenv('TG_API_HASH')
+async def main(target: str | None = None, session: str = 'session') -> None:
     if not api_id or not api_hash:
         print('Please set TG_API_ID and TG_API_HASH environment variables.')
         if not DOTENV_AVAILABLE:
@@ -77,9 +105,8 @@ async def main(target: str = None, session: str = 'session'):
         else:
             print('If you already have a .env, ensure TG_API_ID and TG_API_HASH are defined in it.')
         return
-    api_id = int(api_id)
 
-    client = TelegramClient(session, api_id, api_hash)
+    client: TelegramClient = TelegramClient(session, api_id_int, api_hash)
     await client.start()
     try:
         # If no target provided, prefer config.json targets, else interactive choose
@@ -89,29 +116,28 @@ async def main(target: str = None, session: str = 'session'):
                 print(f'Using target from config.json: {target}')
             else:
                 print('No target provided — listing your recent dialogs...')
-                entity = await choose_dialog(client)
+                entity: Entity | None = await choose_dialog(client)
                 if not entity:
                     print('Cancelled.')
                     return
 
         # Resolve entity: numeric id -> search dialogs, otherwise handle invite or get_entity
-        entity = None
+        entity: Entity | None = None
         if target is not None:
             # numeric id in config may be int or string; try to interpret
+            target_id: int | None = None
             try:
                 target_id = int(str(target))
             except Exception:
                 target_id = None
 
             if target_id is not None:
-                async for d in client.iter_dialogs():
-                    if getattr(d.entity, 'id', None) == target_id:
-                        entity = d.entity
-                        break
+                entity = await client.get_entity(target_id)
+
 
             # If still not found and looks like invite link, attempt to join
             if entity is None and (('joinchat' in str(target)) or ('/+' in str(target)) or str(target).startswith('+')):
-                invite_hash = str(target).rstrip('/').split('/')[-1]
+                invite_hash: str = str(target).rstrip('/').split('/')[-1]
                 try:
                     await client(ImportChatInviteRequest(invite_hash))
                     print('Joined via invite:', invite_hash)
@@ -128,11 +154,11 @@ async def main(target: str = None, session: str = 'session'):
                     return
 
         # Fetch and show latest message
-        msgs = await client.get_messages(entity, limit=1)
+        msgs: list[Message] = await client.get_messages(entity, limit=1)
         if not msgs:
             print('No messages found in', getattr(entity, 'title', str(entity)))
         else:
-            m = msgs[0]
+            m: Message = msgs[0]
             print('--- Latest message ---')
             print('id:', m.id)
             print('date:', m.date)
