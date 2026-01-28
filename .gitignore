@@ -4,3 +4,8 @@
 *.session
 # Local config with private IDs or invite links — do not commit
 config.json
+# Compiled Python files and caches produced during runs
+__pycache__/
+*.py[cod]
+# Exporter output
+exported_config.json
