@@ -23,8 +23,8 @@ from client import create_client
 async def gather_targets(output: str, session: str = 'session', limit: int | None = None) -> int:
     try:
         api_id, api_hash = get_api_credentials()
-    except RuntimeError as e:
-        print(e)
+    except RuntimeError as err:
+        print(err)
         if not DOTENV_AVAILABLE:
             print('Tip: create a .env file and install python-dotenv to load it automatically.')
             print('Example .env content:')
@@ -37,7 +37,10 @@ async def gather_targets(output: str, session: str = 'session', limit: int | Non
     targets: list[str | int] = []
 
     async with create_client(session, api_id, api_hash) as client:
-        dialogs = [d async for d in client.iter_dialogs(limit=limit)]
+        if limit is None:
+            dialogs = [d async for d in client.iter_dialogs()]
+        else:
+            dialogs = [d async for d in client.iter_dialogs(limit=float(limit))]
         for d in dialogs:
             e: Entity = d.entity
             username = getattr(e, 'username', None)

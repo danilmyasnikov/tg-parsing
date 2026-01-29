@@ -2,48 +2,35 @@ from __future__ import annotations
 from telethon.tl.custom.message import Message
 import asyncio
 from datetime import datetime
-from typing import Optional
+from typing import TYPE_CHECKING
 try:
     import asyncpg
 except Exception:
     asyncpg = None
 
+if TYPE_CHECKING:
+    from asyncpg.pool import Pool as AsyncpgPool
+else:
+    class AsyncpgPool:  # runtime fallback for editors that evaluate symbols
+        pass
+
 # Module-level asyncpg pool (optional)
-_pg_pool: Optional["asyncpg.pool.Pool"] = None
+_pg_pool: AsyncpgPool | None = None
+_pg_lock: asyncio.Lock = asyncio.Lock()
 
 
-async def print_store(m: Message) -> None:
-    """Async console storage used by small runners/tests.
-
-    Consolidates message printing here and uses `getattr` to avoid
-    attribute errors when fields are missing.
-    """
-    print('--- Latest message ---')
-    mid = getattr(m, 'id', None)
-    date = getattr(m, 'date', None)
-    sender = getattr(m, 'sender_id', None)
-    text = (getattr(m, 'text', '') or '').replace('\n', ' ')
-    has_media = bool(getattr(m, 'media', None))
-
-    print('id:', mid)
-    print('date:', date)
-    print('sender_id:', sender)
-    print('text:', text)
-    if has_media:
-        print('Has media: yes (not downloaded)')
-
-
-
-async def init_pg_pool(dsn: str, min_size: int = 1, max_size: int = 10) -> "asyncpg.pool.Pool":
+async def init_pg_pool(dsn: str, min_size: int = 1, max_size: int = 10) -> AsyncpgPool:
     """Initialize and return a module-level asyncpg pool.
 
     Raises a RuntimeError if `asyncpg` is not installed.
     """
-    global _pg_pool
+    global _pg_pool, _pg_lock
     if asyncpg is None:
         raise RuntimeError('asyncpg is not installed; add it to requirements')
     if _pg_pool is None:
-        _pg_pool = await asyncpg.create_pool(dsn, min_size=min_size, max_size=max_size)
+        async with _pg_lock:
+            if _pg_pool is None:
+                _pg_pool = await asyncpg.create_pool(dsn, min_size=min_size, max_size=max_size)
     return _pg_pool
 
 
@@ -55,7 +42,7 @@ async def close_pg_pool() -> None:
         _pg_pool = None
 
 
-async def postgres_store(m: Message, pool: Optional["asyncpg.pool.Pool"] = None, dsn: Optional[str] = None) -> None:
+async def postgres_store(m: Message, pool: AsyncpgPool | None = None, dsn: str | None = None) -> None:
     """Store a message record into PostgreSQL using `asyncpg`.
 
     Usage patterns:
@@ -115,3 +102,25 @@ async def postgres_store(m: Message, pool: Optional["asyncpg.pool.Pool"] = None,
             text,
             has_media,
         )
+
+
+async def print_store(m: Message) -> None:
+    """Async console storage used by small runners/tests.
+
+    Consolidates message printing here and uses `getattr` to avoid
+    attribute errors when fields are missing.
+    """
+    print('--- Latest message ---')
+    mid = getattr(m, 'id', None)
+    date = getattr(m, 'date', None)
+    sender = getattr(m, 'sender_id', None)
+    text = (getattr(m, 'text', '') or '').replace('\n', ' ')
+    has_media = bool(getattr(m, 'media', None))
+
+    print('id:', mid)
+    print('date:', date)
+    print('sender_id:', sender)
+    print('text:', text)
+    if has_media:
+        print('Has media: yes (not downloaded)')
+

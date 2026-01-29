@@ -11,7 +11,10 @@ async def fetch_latest_message(client: TelegramClient, entity) -> Message | None
     msgs = await client.get_messages(entity, limit=1)
     if not msgs:
         return None
-    return msgs[0]
+    # Telethon may return a single Message or a sequence; handle both.
+    if isinstance(msgs, (list, tuple)):
+        return cast(Message, msgs[0])
+    return cast(Message, msgs)
 
 
 
