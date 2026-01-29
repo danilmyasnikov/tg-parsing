@@ -69,43 +69,12 @@ python fetch_latest.py 2118600117
 python fetch_latest.py @mychannel
 ```
 
-- Fetch a small number of messages (test/benchmark):
-
-```powershell
-python fetch_messages.py 2118600117 --limit 3
-```
-
-**Developer notes**
-
-- `parser.fetch_all_messages(client, entity, store_func=None, *, resume_after_id=None, limit=None)`
-  provides a streaming, resumable fetch loop and accepts a `store_func(message)`
-  callback for persisting messages (useful for SQLite/Postgres backends).
-- FloodWaits are handled with exponential backoff in the fetcher; avoid bulk
-  media downloads during large crawls to reduce risk of rate limits.
-
-**Next steps & roadmap**
-
-- Prototype SQLite ingestion for `fetch_all_messages` (fast, zero-config test).
-- Add progress/ETA instrumentation to the fetcher and then integrate a
-  Postgres-backed storage with migrations.
-
-See `TODO.md` for an up-to-date task list and priorities.
-
-**Security & etiquette**
-
-- Keep `.env` and session files out of version control.
-- Be mindful of Telegram rate limits and account safety when performing full
-  history crawls.
-
-If you want, I can implement the SQLite prototype next and wire a small
-`store_func` that writes minimal message metadata for benchmarking.
 # TG-parsing
 
-Small Telethon-based utilities to inspect your Telegram dialogs and fetch the latest
-message from a channel (supports private channels you are a member of or can join
-via invite link).
+Small Telethon-based utilities to inspect your Telegram dialogs and fetch messages.
+This project was refactored into small, typed modules (Python 3.10+).
 
-**Quick start (PowerShell)**
+## Quick start (PowerShell)
 
 ```powershell
 python -m venv .venv
@@ -114,7 +83,7 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-**Credentials (.env)**
+## Credentials (.env)
 
 Create a `.env` file in the project root with your credentials (do NOT commit it):
 
@@ -127,51 +96,60 @@ TG_PHONE=+7999xxxxxxx
 SESSION_NAME=session
 ```
 
-The first run will prompt for the Telegram login code and create a session file
-(`session.session` or the `SESSION_NAME` you set). The session file is ignored by
-git (`.gitignore` includes `session.*`).
+On first run the scripts will create a session file (ignored by git).
 
-**Config targets**
+## Project layout
 
-You can store one or more dialog identifiers in `config.json`. Example:
+- `config.py`: load runtime config and credentials
+- `client.py`: async Telethon client context manager
+- `resolver.py`: resolve CLI targets (id/username/invite link)
+- `parser.py`: parsing helpers; includes `iter_messages_from_entity` (async generator)
+- `fetcher.py`: drains parser output and calls a `store_func` for each message
+- `storage.py`: default console `store_func` (`print_store`) and storage helpers
+- `export_targets.py`: export dialog identifiers to `exported_config.json`
+- `fetch_messages.py`: small runner to fetch N messages (useful for testing/bench)
 
-```json
-{
-  "targets": [2118600117]
-}
-```
+See the source files for full behavior and available helpers.
 
-If you run `fetch_latest.py` without arguments it will use the first entry from
-`config.json` (if present). Targets can be numeric dialog ids, usernames, or
-invite links.
+## Usage examples
 
-**Scripts & usage examples**
-
-- List dialogs (shows id, username, title):
+- Export dialogs to JSON (creates `exported_config.json`):
 
 ```powershell
-python list_dialogs.py
+python export_targets.py
 ```
 
-- Fetch latest message (uses `config.json` or interactive chooser):
+- Fetch a small number of messages (test/benchmark):
 
 ```powershell
-python fetch_latest.py            # uses config.json first target or prompts
-python fetch_latest.py 2118600117 # use numeric id
-python fetch_latest.py @mychan    # use username
-python fetch_latest.py "https://t.me/joinchat/AAAA..." # invite link
+python fetch_messages.py 2118600117 --limit 3
 ```
 
-The script prints message id, date, sender and text. If the message contains
-media it reports that as well (you can extend the script to call
-`message.download_media()` to save attachments).
+## Developer notes
 
+- `parser.iter_messages_from_entity(client, entity, *, resume_after_id=None, limit=None)`
+  yields `Message` objects asynchronously and is resilient to resend/duplicate events.
+- `fetcher.fetch_all_messages(client, entity, store_func, *, resume_after_id=None, limit=None)`
+  consumes the generator and calls `await store_func(message)` for each item.
+- `storage.print_store(message)` is the built-in console sink used by examples.
+- Checkpointing / resume: the fetcher accepts a resume parameter and the
+  project plans persistent checkpoints (see `TODO.md`) so a future `store_func`
+  can persist the last-processed message id and resume later.
 
-**Notes & security**
-- Keep `.env` and `session.*` out of version control (already in `.gitignore`).
-- If you regenerate `api_id`/`api_hash` at https://my.telegram.org, update `.env`.
-- Private channels must either be in your dialogs (you are a member) or you must
-  provide an invite link so the script can join it.
+FloodWaits are handled with backoff in the fetcher; avoid bulk media downloads
+during large crawls to reduce rate-limit exposure.
 
-If you want, I can add automatic media download, text cleaning (strip Markdown),
-or support multiple targets from `config.json` in a single run.
+## Next steps & roadmap
+
+- Prototype SQLite ingestion for `fetcher.fetch_all_messages` (fast, zero-config)
+- Add progress/ETA instrumentation and integrate Postgres-backed storage with migrations
+
+See `TODO.md` for the up-to-date task list and priorities.
+
+## Security & etiquette
+
+- Keep `.env` and session files out of version control.
+- Respect Telegram rate limits and account safety when crawling large histories.
+
+If you want, I can implement the SQLite prototype next and wire a small `store_func`
+that writes minimal message metadata for benchmarking.
