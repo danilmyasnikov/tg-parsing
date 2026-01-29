@@ -11,16 +11,8 @@ import asyncio
 from client import create_client
 from config import get_api_credentials
 import resolver
-import parser
-
-
-async def _print_store(m):
-    mid = getattr(m, 'id', None)
-    date = getattr(m, 'date', None)
-    sender = getattr(m, 'sender_id', None)
-    text = (getattr(m, 'text', '') or '').replace('\n', ' ')[:200]
-    has_media = bool(getattr(m, 'media', None))
-    print(f'id={mid} date={date} sender={sender} media={has_media} text="{text}"')
+import fetcher
+import storage
 
 
 async def main(target: str, session: str = 'session', limit: int = 3) -> int:
@@ -31,7 +23,7 @@ async def main(target: str, session: str = 'session', limit: int = 3) -> int:
             print('Could not resolve target:', target)
             return 2
 
-        count = await parser.fetch_all_messages(client, entity, _print_store, limit=limit)
+        count = await fetcher.fetch_all_messages(client, entity, storage.print_store, limit=limit)
         print(f'Processed {count} messages')
         return 0
 

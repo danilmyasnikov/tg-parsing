@@ -9,3 +9,5 @@ __pycache__/
 *.py[cod]
 # Exporter output
 exported_config.json
+# VS Code workspace settings
+.vscode/
