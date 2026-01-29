@@ -19,6 +19,8 @@
 - [ ] Add logging and verbosity option
 - [ ] Export targets as structured records (id/username/type/access_hash) — backward-compatible
 - [ ] Add progress/ETA display to `fetch_all_messages` (show ETA, respect FloodWait) — Medium priority
+- [ ] Implement checkpointing / resume for message fetching (Priority: Medium)
+	- Description: Persist the last-processed message id and resume ingestion from that checkpoint. Use DB-driven deduplication (insert-if-not-exists + stop-on-duplicate) and optionally leverage Telethon `min_id`/`max_id` to limit API work. Keep behavior idempotent; handle FloodWait errors; add tests and README example.
 
 ## Low priority / Backlog
 - [ ] Exporter improvements (skip-users flag)
