@@ -9,13 +9,14 @@ import argparse
 import asyncio
 
 from client import create_client
+import os
 from config import get_api_credentials
 import resolver
 import fetcher
 import storage
 
 
-async def main(target: str, session: str = 'session', limit: int = 3) -> int:
+async def main(target: str, session: str = 'session', limit: int = 3, pg_dsn: str | None = None) -> int:
     api_id, api_hash = get_api_credentials()
     async with create_client(session, api_id, api_hash) as client:
         entity = await resolver.resolve_entity(client, target)
@@ -23,7 +24,15 @@ async def main(target: str, session: str = 'session', limit: int = 3) -> int:
             print('Could not resolve target:', target)
             return 2
 
-        count = await fetcher.fetch_all_messages(client, entity, storage.print_store, limit=limit)
+        # prefer explicit PG DSN (CLI) then environment variable `PG_DSN`
+        if not pg_dsn:
+            pg_dsn = os.getenv('PG_DSN')
+        if pg_dsn:
+            store_fn = lambda m: storage.postgres_store(m, dsn=pg_dsn)
+        else:
+            # fall back to module-level pool if previously initialized
+            store_fn = storage.postgres_store
+        count = await fetcher.fetch_all_messages(client, entity, store_fn, limit=limit)
         print(f'Processed {count} messages')
         return 0
 
@@ -33,5 +42,6 @@ if __name__ == '__main__':
     p.add_argument('target', help='channel username or numeric id')
     p.add_argument('--session', default='session', help='session filename prefix')
     p.add_argument('--limit', type=int, default=3, help='number of messages to fetch')
+    p.add_argument('--pg-dsn', dest='pg_dsn', help='Postgres DSN to write messages (overrides PG_DSN env)')
     args = p.parse_args()
-    raise SystemExit(asyncio.run(main(args.target, session=args.session, limit=args.limit)))
+    raise SystemExit(asyncio.run(main(args.target, session=args.session, limit=args.limit, pg_dsn=args.pg_dsn)))

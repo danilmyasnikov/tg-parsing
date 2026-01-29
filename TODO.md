@@ -25,3 +25,4 @@
 ## Low priority / Backlog
 - [ ] Exporter improvements (skip-users flag)
 - [ ] Backlog: side quests & polish
+- [ ] Add linters/formatters: Black/Flake8/Pylint

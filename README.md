@@ -125,6 +125,79 @@ python export_targets.py
 python fetch_messages.py 2118600117 --limit 3
 ```
 
+## Postgres (Docker) — Quick dev setup
+
+For development we recommend running Postgres in Docker. This is fast to start,
+reproducible and isolates the database from your host environment.
+
+1. Start Postgres (one-liner, PowerShell):
+
+```powershell
+docker run --name tg-postgres `
+  -e POSTGRES_USER=pguser `
+  -e POSTGRES_PASSWORD=pgpass `
+  -e POSTGRES_DB=tgdata `
+  -p 5432:5432 `
+  -v pgdata:/var/lib/postgresql/data `
+  -d postgres:15
+```
+
+2. Set the DSN for this session (PowerShell):
+
+```powershell
+$env:PG_DSN = 'postgresql://pguser:pgpass@localhost:5432/tgdata'
+```
+
+3. Run the fetcher and write messages to Postgres (example):
+
+```powershell
+.venv\Scripts\python fetch_messages.py 2118600117 --limit 100 --pg-dsn "postgresql://pguser:pgpass@localhost:5432/tgdata"
+```
+
+4. Verify rows (inside container using `psql`):
+
+```bash
+docker exec -it tg-postgres psql -U pguser -d tgdata -c "SELECT id,date,sender_id,text,has_media FROM messages LIMIT 10;"
+```
+
+Or use the provided Python inspector (from the repo venv):
+
+```powershell
+.venv\Scripts\python scripts/print_pg.py "postgresql://pguser:pgpass@localhost:5432/tgdata"
+```
+
+Notes
+- The `-v pgdata:/var/lib/postgresql/data` option creates a named volume so data
+  persists across container restarts.
+- Use a real password for anything outside local testing; percent-encode special
+  characters when embedding them in the DSN.
+- For production use a managed Postgres provider and add migrations (Alembic).
+
+Optional: `docker-compose.yml`
+
+```yaml
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: pguser
+      POSTGRES_PASSWORD: pgpass
+      POSTGRES_DB: tgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
+```
+
+Start with:
+
+```bash
+docker compose up -d
+```
+
 ## Developer notes
 
 - `parser.iter_messages_from_entity(client, entity, *, resume_after_id=None, limit=None)`
