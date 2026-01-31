@@ -5,7 +5,7 @@ from telethon.errors import FloodWaitError
 from telethon.tl.custom.message import Message
 
 from parser import iter_messages_from_entity
-from storage_print import print_store
+from storage import print_store
 
 
 async def fetch_all_messages(

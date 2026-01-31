@@ -11,9 +11,9 @@ import asyncio
 from client import create_client
 import os
 from config import get_api_credentials
-import resolver
-import fetcher
-from storage_pg import init_pg_pool, postgres_store, close_pg_pool
+import entity_resolver as resolver
+import message_fetcher as fetcher
+from storage import init_pg_pool, postgres_store, close_pg_pool
 
 
 async def main(target: str, session: str = 'session', limit: int = 3, pg_dsn: str | None = None) -> int:

@@ -54,7 +54,7 @@ async def close_pg_pool() -> None:
 async def postgres_store(m, pool: AsyncpgPool | None = None, dsn: str | None = None) -> None:
     """Store a message record into PostgreSQL using `asyncpg`.
 
-    This function mirrors the previous `postgres_store` from `storage.py`.
+    This function mirrors the previous `postgres_store` from the top-level storage.
     """
     if asyncpg is None:
         raise RuntimeError('asyncpg is not installed; cannot use postgres_store')

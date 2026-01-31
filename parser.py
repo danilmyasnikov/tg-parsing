@@ -4,7 +4,7 @@ import asyncio
 from telethon.errors import FloodWaitError
 from telethon import TelegramClient
 from telethon.tl.custom.message import Message
-from annotations import Entity
+from type_annotations import Entity
 
 
 async def fetch_latest_message(client: TelegramClient, entity) -> Message | None:

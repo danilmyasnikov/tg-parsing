@@ -14,7 +14,7 @@ import argparse
 import asyncio
 import json
 from pathlib import Path
-from annotations import Entity
+from type_annotations import Entity
 
 from config import get_api_credentials, DOTENV_AVAILABLE
 from client import create_client

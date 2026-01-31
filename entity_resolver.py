@@ -1,5 +1,5 @@
 from __future__ import annotations
-from annotations import Entity
+from type_annotations import Entity
 
 
 async def resolve_entity(client, target: str) -> Entity | None:
