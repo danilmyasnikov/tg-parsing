@@ -12,20 +12,28 @@
 - [ ] Integrate storage into main flow
 
 ## Medium priority
-- [ ] Evaluate and plan migration to OOP design (Priority: Medium)
+- [ ] Evaluate and plan migration to OOP design
 	- Goal: assess benefits of converting procedural modules into classes (e.g. `Fetcher`, `Store`, `DBPool`) for clearer responsibility boundaries, easier testing, and dependency injection. Provide a migration plan with phases and estimated effort.
 - [ ] Add unit tests & CI (due 2026-02-18)
 - [ ] Add logging and verbosity option
 - [ ] Export targets as structured records (id/username/type/access_hash) — backward-compatible
 - [ ] Add progress/ETA display to `fetch_all_messages` (show ETA, respect FloodWait) — Medium priority
-- [ ] Implement checkpointing / resume for message fetching (Priority: Medium)
+- [ ] Implement checkpointing / resume for message fetching
 	- Description: Persist the last-processed message id and resume ingestion from that checkpoint. Use DB-driven deduplication (insert-if-not-exists + stop-on-duplicate) and optionally leverage Telethon `min_id`/`max_id` to limit API work. Keep behavior idempotent; handle FloodWait errors; add tests and README example.
+ - [ ] Migrate core modules into a `tg_parsing` package
+	 - Goal: move application code into `tg_parsing/` (package) to separate app logic from repo metadata and scripts; update imports, CI, and README.
+	 - Steps:
+		 - Create `tg_parsing/` and `__init__.py`.
+		 - `git mv` core modules into the package (client, config, parser, message_fetcher, entity_resolver, storage, etc.).
+		 - Update imports to `from tg_parsing import ...` or use intra-package relative imports.
+		 - Adjust `scripts/dev_bootstrap.ps1` and README examples to use `python -m tg_parsing.fetch_messages` or updated paths.
+		 - Run bootstrap smoke tests and fix any import/runtime issues.
+		 - Commit and push the refactor in logical steps.
 
 ## Low priority / Backlog
 - [ ] Exporter improvements (skip-users flag)
 - [ ] Backlog: side quests & polish
 - [ ] Add linters/formatters: Black/Flake8/Pylint
-
 - [ ] Fix PowerShell `-Command` quoting when invoking Python scripts (e.g. `clear_messages.py`) — Priority: Low
 	- Goal: ensure `dev_bootstrap.ps1` and any helper invocations set `PG_DSN` safely (in-process or via `-File`) to avoid parse errors; add a short note/example to README.
 
