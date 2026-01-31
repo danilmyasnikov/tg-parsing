@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import asyncio
 import os
+import sys
 import asyncpg
 
 async def main():
@@ -20,6 +21,11 @@ async def main():
             '''
         )
         await conn.execute('TRUNCATE TABLE messages;')
+        # Verify the table is empty after truncate. If it's not, exit non-zero.
+        row_count = await conn.fetchval('SELECT COUNT(*) FROM messages')
+        if row_count != 0:
+            print(f'ERROR: messages table not empty after TRUNCATE, row_count={row_count}')
+            sys.exit(1)
         print('Truncated messages table')
     finally:
         await conn.close()

@@ -5,13 +5,13 @@ from telethon.errors import FloodWaitError
 from telethon.tl.custom.message import Message
 
 from parser import iter_messages_from_entity
-import storage
+from storage_print import print_store
 
 
 async def fetch_all_messages(
     client,
     entity,
-    store_func: Callable[[Message], Awaitable[None]] = storage.print_store,
+    store_func: Callable[[Message], Awaitable[None]] = print_store,
     *,
     resume_after_id: int | None = None,
     limit: int | None = None,

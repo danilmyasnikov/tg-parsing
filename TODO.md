@@ -12,6 +12,8 @@
 - [ ] Integrate storage into main flow
 
 ## Medium priority
+- [ ] Evaluate and plan migration to OOP design (Priority: Medium)
+	- Goal: assess benefits of converting procedural modules into classes (e.g. `Fetcher`, `Store`, `DBPool`) for clearer responsibility boundaries, easier testing, and dependency injection. Provide a migration plan with phases and estimated effort.
 - [ ] Add unit tests & CI (due 2026-02-18)
 - [ ] Add logging and verbosity option
 - [ ] Export targets as structured records (id/username/type/access_hash) — backward-compatible
@@ -23,6 +25,9 @@
 - [ ] Exporter improvements (skip-users flag)
 - [ ] Backlog: side quests & polish
 - [ ] Add linters/formatters: Black/Flake8/Pylint
+
+- [ ] Fix PowerShell `-Command` quoting when invoking Python scripts (e.g. `clear_messages.py`) — Priority: Low
+	- Goal: ensure `dev_bootstrap.ps1` and any helper invocations set `PG_DSN` safely (in-process or via `-File`) to avoid parse errors; add a short note/example to README.
 
 ## Planned (Tentative)
 - [ ] Scaffold Alembic (init)
