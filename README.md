@@ -46,7 +46,7 @@ On first run a Telethon session file will be created (ignored by git).
  - `message_fetcher.py` — consumes `parser` and calls a `store_func` for each message
  - `storage/` — storage package exposing `print_store`, `postgres_store` and pool helpers
  - `export_targets.py` — exports dialog identifiers
- - `fetch_messages.py` — CLI runner used during development/testing
+-- `collect.py` — CLI runner used during development/testing
  - `scripts/` — helper scripts (truncate/inspect DB)
 
 ## Config example
@@ -116,7 +116,7 @@ This project uses a hybrid approach where your Python application runs on your h
 │                                          │
 │  ┌────────────────────────────────┐      │
 │  │ Python app runs HERE           │      │
-│  │ (fetch_messages.py)            │      │
+│  │ (collect.py)                   │      |
 │  │ Uses: .venv + Python 3.10      │      │
 │  └────────────┬───────────────────┘      │
 │               │                          │
@@ -150,7 +150,7 @@ This project uses a hybrid approach where your Python application runs on your h
 2. Run the fetcher for a target id (write into Postgres):
 
 ```powershell
-.venv\Scripts\python.exe fetch_messages.py 2118600117 --limit 100 --pg-dsn "postgresql://pguser:pgpass@localhost:5432/tgdata"
+.venv\Scripts\python.exe collect.py 2118600117 --limit 100 --pg-dsn "postgresql://pguser:pgpass@localhost:5432/tgdata"
 ```
 
 ## Inspecting the DB 🛠️

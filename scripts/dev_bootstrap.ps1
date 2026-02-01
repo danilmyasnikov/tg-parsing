@@ -87,8 +87,8 @@ if ($RunClear) {
 }
 
 if ($RunFetch) {
-    Write-Host "Running fetch_messages.py target=$Target limit=$Limit..."
-    python .\fetch_messages.py $Target --limit $Limit --pg-dsn $env:PG_DSN
+    Write-Host "Running collect.py target=$Target limit=$Limit..."
+    python .\collect.py $Target --limit $Limit --pg-dsn $env:PG_DSN
 }
 
 if ($RunPrint) {

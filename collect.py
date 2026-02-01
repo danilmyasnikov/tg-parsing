@@ -2,7 +2,7 @@
 """Fetch a small number of messages for testing and print concise summaries.
 
 Usage:
-    .venv/Scripts/python fetch_messages.py <target> --limit 3
+    .venv/Scripts/python collect.py <target> --limit 3
 """
 from __future__ import annotations
 import argparse
