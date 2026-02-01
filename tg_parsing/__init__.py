@@ -19,7 +19,7 @@ from .entity_resolver import resolve_entity
 from .stream import stream_messages
 
 # Fetcher
-from .consumer import fetch_all_messages
+from .consumer import consume_messages
 
 # Storage
 from .storage import (
@@ -41,7 +41,7 @@ __all__ = [
 	'stream_messages',
 
 	# fetcher
-	'fetch_all_messages',
+	'consume_messages',
 
 	# storage
 	'print_store',

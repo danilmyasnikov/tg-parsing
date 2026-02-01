@@ -8,7 +8,7 @@ from .stream import stream_messages
 from .storage import print_store
 
 
-async def fetch_all_messages(
+async def consume_messages(
     client,
     entity,
     store_func: Callable[[Message], Awaitable[None]] = print_store,
@@ -16,7 +16,7 @@ async def fetch_all_messages(
     resume_after_id: int | None = None,
     limit: int | None = None,
 ) -> int:
-    """Compatibility wrapper: consume `iter_messages_from_entity` and
+    """Compatibility wrapper: consume `stream_messages` and
     call `store_func` for each message or collect in-memory when
     `store_func` is None. Returns the number of messages processed.
     """
@@ -41,7 +41,7 @@ async def fetch_all_messages(
         wait = int(getattr(e, 'seconds', 0)) or 60
         print(f'FloodWaitError: sleeping for {wait}s before resuming')
         await asyncio.sleep(wait + 1)
-        more = await fetch_all_messages(
+        more = await consume_messages(
             client, entity, store_func, resume_after_id=resume_after_id, limit=(None if limit is None else max(0, limit - count))
         )
         return count + more

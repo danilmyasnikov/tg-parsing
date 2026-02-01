@@ -28,12 +28,12 @@ async def main(target: str, session: str = 'session', limit: int = 3, pg_dsn: st
         if pg_dsn:
             async with tg.pg_pool_context(pg_dsn) as pool:
                 store_fn = lambda m: tg.postgres_store(m, pool=pool)
-                count = await tg.fetch_all_messages(client, entity, store_fn, limit=limit)
+                count = await tg.consume_messages(client, entity, store_fn, limit=limit)
                 print(f'Processed {count} messages')
         else:
             # fall back to module-level pool if previously initialized
             store_fn = tg.postgres_store
-            count = await tg.fetch_all_messages(client, entity, store_fn, limit=limit)
+            count = await tg.consume_messages(client, entity, store_fn, limit=limit)
             print(f'Processed {count} messages')
         return 0
 
