@@ -4,7 +4,7 @@ import asyncio
 from telethon.errors import FloodWaitError
 from telethon.tl.custom.message import Message
 
-from .parser import iter_messages_from_entity
+from .stream import iter_messages_from_entity
 from .storage import print_store
 
 
