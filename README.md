@@ -38,15 +38,16 @@ Obtain `TG_API_ID` and `TG_API_HASH` from https://my.telegram.org (open "API dev
 On first run a Telethon session file will be created (ignored by git).
 
 ## Repository layout (high level)
- - `config.py` — load `config.json` and environment credentials
- - `client.py` — async Telethon client context manager
- - `type_annotations.py` — type aliases used for editor/type-checker convenience
- - `entity_resolver.py` — resolve CLI `target` to a Telethon entity
- - `stream.py` — async message iterators (resumable)
- - `consumer.py` — consumes `stream` and calls a `store_func` for each message
- - `storage/` — storage package exposing `print_store`, `postgres_store` and pool helpers
+ - `collector/` — package containing the core library APIs used by the CLI and scripts:
+   - `client.py` — async Telethon client context manager
+   - `config.py` — load `config.json` and environment credentials
+   - `type_annotations.py` — type aliases used for editor/type-checker convenience
+   - `entity_resolver.py` — resolve CLI `target` to a Telethon entity
+   - `stream.py` — async message iterator (`stream_messages`)
+   - `consumer.py` — consumer wrapper (`consume_messages`)
+   - `storage/` — storage helpers exposing `print_store`, `postgres_store` and pool helpers
+ - `collect.py` — CLI runner used during development/testing (uses the `collector` package)
  - `export_targets.py` — exports dialog identifiers
--- `collect.py` — CLI runner used during development/testing
  - `scripts/` — helper scripts (truncate/inspect DB)
 
 ## Config example
@@ -151,6 +152,16 @@ This project uses a hybrid approach where your Python application runs on your h
 
 ```powershell
 .venv\Scripts\python.exe collect.py 2118600117 --limit 100 --pg-dsn "postgresql://pguser:pgpass@localhost:5432/tgdata"
+```
+
+Package API examples (used by scripts and callers):
+
+```python
+import collector as tg
+
+api_id, api_hash = tg.get_api_credentials()
+# iterate messages: async for m in tg.stream_messages(client, entity): ...
+# consume into a store: await tg.consume_messages(client, entity, store_func, limit=100)
 ```
 
 ## Inspecting the DB 🛠️
