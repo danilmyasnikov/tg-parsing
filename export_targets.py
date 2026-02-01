@@ -14,10 +14,10 @@ import argparse
 import asyncio
 import json
 from pathlib import Path
-from type_annotations import Entity
+from tg_parsing.type_annotations import Entity
 
-from config import get_api_credentials, DOTENV_AVAILABLE
-from client import create_client
+from tg_parsing.config import get_api_credentials, DOTENV_AVAILABLE
+from tg_parsing.client import create_client
 
 
 async def gather_targets(output: str, session: str = 'session', limit: int | None = None) -> int:
