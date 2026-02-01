@@ -21,8 +21,7 @@ This file groups short-term and long-term work. Tasks are ordered by priority â€
 - [ ] Add progress/ETA display to `fetch_all_messages` (show ETA, respect FloodWait)
 - [ ] Implement checkpointing / resume for message fetching
   - Description: persist last-processed message id and resume ingestion; use DB-driven deduplication and support Telethon `min_id`/`max_id`. Keep behavior idempotent and add tests.
-- [ ] Migrate core modules into a `tg_parsing` package
-  - Goal: move application code into `tg_parsing/` to separate app logic from repo metadata and scripts; update imports, README, and CI.
+ 
 
 ## Low priority / Backlog
 - [ ] Exporter improvements (skip-users flag)
@@ -52,3 +51,5 @@ This file groups short-term and long-term work. Tasks are ordered by priority â€
 ## Done
 - [x] Prototype SQLite ingestion for testing `fetch_all_messages` (completed 2026-01-29)
   - Goal: local, zero-config store of minimal message metadata for quick benchmarking and debugging.
+- [x] Migrate core modules into a `tg_parsing` package
+  - Goal: move application code into `tg_parsing/` to separate app logic from repo metadata and scripts; update imports, README, and CI.
