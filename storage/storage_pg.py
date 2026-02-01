@@ -1,6 +1,7 @@
 from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING
+from contextlib import asynccontextmanager
 
 try:
     import asyncpg
@@ -49,6 +50,24 @@ async def close_pg_pool() -> None:
     if _pg_pool is not None:
         await _pg_pool.close()
         _pg_pool = None
+
+
+@asynccontextmanager
+async def pg_pool_context(pg_dsn: str, min_size: int = 1, max_size: int = 10):
+    """Async context manager that initializes the module-level PG pool.
+
+    The context will call `init_pg_pool(pg_dsn, ...)` on entry and
+    `close_pg_pool()` on exit.
+    """
+    if asyncpg is None:
+        raise RuntimeError('asyncpg is not installed; add it to requirements')
+
+    # initialize module-level pool (may reuse existing pool)
+    await init_pg_pool(pg_dsn, min_size=min_size, max_size=max_size)
+    try:
+        yield _pg_pool
+    finally:
+        await close_pg_pool()
 
 
 async def postgres_store(m, pool: AsyncpgPool | None = None, dsn: str | None = None) -> None:

@@ -13,7 +13,7 @@ import os
 from config import get_api_credentials
 import entity_resolver as resolver
 import message_fetcher as fetcher
-from storage import init_pg_pool, postgres_store, close_pg_pool
+from storage import postgres_store, pg_pool_context
 
 
 async def main(target: str, session: str = 'session', limit: int = 3, pg_dsn: str | None = None) -> int:
@@ -28,21 +28,17 @@ async def main(target: str, session: str = 'session', limit: int = 3, pg_dsn: st
         if not pg_dsn:
             pg_dsn = os.getenv('PG_DSN')
             
-        pool = None
+        # Prefer explicit PG DSN (CLI) then environment variable `PG_DSN`.
         if pg_dsn:
-            # initialize pool once at startup and capture it in the store function
-            pool = await init_pg_pool(pg_dsn)
-            store_fn = lambda m: postgres_store(m, pool=pool)
+            async with pg_pool_context(pg_dsn) as pool:
+                store_fn = lambda m: postgres_store(m, pool=pool)
+                count = await fetcher.fetch_all_messages(client, entity, store_fn, limit=limit)
+                print(f'Processed {count} messages')
         else:
             # fall back to module-level pool if previously initialized
             store_fn = postgres_store
-
-        count = await fetcher.fetch_all_messages(client, entity, store_fn, limit=limit)
-        print(f'Processed {count} messages')
-
-        # if we created a pool here, close it
-        if pool is not None:
-            await close_pg_pool()
+            count = await fetcher.fetch_all_messages(client, entity, store_fn, limit=limit)
+            print(f'Processed {count} messages')
         return 0
 
 

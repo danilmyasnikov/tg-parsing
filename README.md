@@ -42,14 +42,14 @@ On first run a Telethon session file will be created (ignored by git).
 Repository layout (high level)
  - `config.py` — load `config.json` and environment credentials
  - `client.py` — async Telethon client context manager
- - `annotations.py` — type aliases used for editor/type-checker convenience
- - `resolver.py` — resolve CLI `target` to a Telethon entity
+ - `type_annotations.py` — type aliases used for editor/type-checker convenience
+ - `entity_resolver.py` — resolve CLI `target` to a Telethon entity
  - `parser.py` — async message iterators (resumable)
- - `fetcher.py` — consumes `parser` and calls a `store_func` for each message
- - `storage.py` — storage sinks: `print_store` and `postgres_store`
+ - `message_fetcher.py` — consumes `parser` and calls a `store_func` for each message
+ - `storage/` — storage package exposing `print_store`, `postgres_store` and pool helpers
  - `export_targets.py` — exports dialog identifiers
  - `fetch_messages.py` — CLI runner used during development/testing
- - `scripts/` — helper scripts (truncate/inspect DB, demos)
+ - `scripts/` — helper scripts (truncate/inspect DB)
 
 Config example
 
@@ -114,11 +114,9 @@ Type checking ✅
   codebase (some optional warnings may appear for demo scripts).
 
 Helper scripts 🧰
-- `scripts/clear_messages.py` — create table (if missing) and truncate messages
-- `scripts/check_messages.py` — print row count and sample rows
-- `examples/lambda_coroutine_demo.py` — small runnable demo explaining how
-  lambdas return coroutine objects and how to await them (useful when
-  wiring `store_fn` wrappers)
+ - `scripts/clear_messages.py` — create table (if missing) and truncate messages
+ - `scripts/check_messages.py` — print row count and sample rows
+ - `scripts/print_pg.py` — print a sample of rows from Postgres for verification
 
 Testing notes 🧪
 - We intentionally avoid downloading media during crawls in the example
