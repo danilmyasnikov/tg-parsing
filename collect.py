@@ -9,7 +9,7 @@ import argparse
 import asyncio
 
 import os
-import tg_parsing as tg
+import collector as tg
 
 
 async def main(target: str, session: str = 'session', limit: int = 3, pg_dsn: str | None = None) -> int:

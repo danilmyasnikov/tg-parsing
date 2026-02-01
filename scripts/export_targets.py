@@ -19,9 +19,9 @@ from pathlib import Path
 # Ensure project root is on sys.path so imports work when running from `scripts/`
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from tg_parsing.type_annotations import Entity
+from collector.type_annotations import Entity
 
-import tg_parsing as tg
+import collector as tg
 
 
 async def gather_targets(output: str, session: str = 'session', limit: int | None = None) -> int:
