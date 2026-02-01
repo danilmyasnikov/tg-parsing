@@ -8,12 +8,12 @@ from __future__ import annotations
 import argparse
 import asyncio
 
-from client import create_client
+from tg_parsing.client import create_client
 import os
-from config import get_api_credentials
-import entity_resolver as resolver
-import message_fetcher as fetcher
-from storage import postgres_store, pg_pool_context
+from tg_parsing.config import get_api_credentials
+import tg_parsing.entity_resolver as resolver
+import tg_parsing.message_fetcher as fetcher
+from tg_parsing.storage import postgres_store, pg_pool_context
 
 
 async def main(target: str, session: str = 'session', limit: int = 3, pg_dsn: str | None = None) -> int:
