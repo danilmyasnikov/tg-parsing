@@ -7,6 +7,8 @@ This file groups short-term and long-term work. Tasks are ordered by priority â€
   - Goal: reliably iterate channel history and persist every message into Postgres (use migrations, checkpoints, and deduplication).
 - [ ] Store posts in PostgreSQL (due 2026-01-30)
   - Goal: create importable `messages` table and persist messages with minimal metadata.
+ - [ ] Create `vibecoding` branch and scaffold (due 2026-02-05)
+   - Goal: create a feature branch named `vibecoding`, add an initial module/package skeleton, and push the branch to `origin` so work can proceed in isolation.
 
 ## High priority
 - [ ] Implement DB migrations & schema (due 2026-02-01)
