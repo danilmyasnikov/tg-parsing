@@ -9,12 +9,12 @@ This README documents a detailed developer setup, how to run the fetcher,
 database wiring (Docker), and notes about recent design changes in the code
 (pool initialization, PEP-604 typing, race-safe pool creation).
 
-Prerequisites 🚧
+## Prerequisites 🚧
  - Python 3.10+ (project uses PEP-604 `X | None` annotations)
  - Git
  - Docker (recommended for Postgres local dev)
 
-Quick local setup (PowerShell) ⚙️
+## Quick local setup (PowerShell) ⚙️
 
 ```powershell
 python -m venv .venv
@@ -23,7 +23,7 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-Credentials (.env) 🔐
+## Credentials (.env) 🔐
 
 Create a `.env` file in the project root (do NOT commit) with your Telegram
 credentials. Example:
@@ -39,7 +39,7 @@ SESSION_NAME=session
 
 On first run a Telethon session file will be created (ignored by git).
 
-Repository layout (high level)
+## Repository layout (high level)
  - `config.py` — load `config.json` and environment credentials
  - `client.py` — async Telethon client context manager
  - `type_annotations.py` — type aliases used for editor/type-checker convenience
@@ -51,7 +51,7 @@ Repository layout (high level)
  - `fetch_messages.py` — CLI runner used during development/testing
  - `scripts/` — helper scripts (truncate/inspect DB)
 
-Config example
+## Config example
 
 `config.json` contains one key `targets` with numeric ids or usernames:
 
@@ -61,7 +61,7 @@ Config example
 }
 ```
 
-Running Postgres for development (Docker) 🐘
+## Running Postgres for development (Docker) 🐘
 
 Quick one-liner (PowerShell):
 
@@ -87,7 +87,39 @@ Set the DSN for the current shell session (PowerShell example):
 $env:PG_DSN = 'postgresql://pguser:pgpass@localhost:5432/tgdata'
 ```
 
-Running the fetcher (clean run) ▶️
+## Architecture Overview 🏗️
+
+This project uses a hybrid approach where your Python application runs on your host machine and connects to a Dockerized Postgres database:
+
+```
+┌──────────────────────────────────────────┐
+│  Your Windows/Mac machine                │
+│                                          │
+│  ┌────────────────────────────────┐     │
+│  │ Python app runs HERE           │     │
+│  │ (fetch_messages.py)            │     │
+│  │ Uses: .venv + Python 3.10      │     │
+│  └────────────┬───────────────────┘     │
+│               │                          │
+│               │ connects to              │
+│               │ (localhost:5432)         │
+│               │                          │
+│               ▼                          │
+│  ┌────────────────────────────────┐     │
+│  │ Docker container               │     │
+│  │ postgres:15 (Debian-based)     │     │
+│  │ Port: 5432                     │     │
+│  └────────────────────────────────┘     │
+└──────────────────────────────────────────┘
+```
+
+**Why this setup?**
+- ✅ Easy Python debugging (runs natively on your machine)
+- ✅ Consistent Postgres version across all developers
+- ✅ No need to install Postgres system-wide
+- ✅ Simple to tear down and recreate the database
+
+## Running the fetcher (clean run) ▶️
 
 1. Optional: truncate the messages table for a clean test (we provide
    `scripts/clear_messages.py` which ensures the table exists and truncates it):
@@ -102,33 +134,32 @@ Running the fetcher (clean run) ▶️
 .venv\Scripts\python.exe fetch_messages.py 2118600117 --limit 100 --pg-dsn "postgresql://pguser:pgpass@localhost:5432/tgdata"
 ```
 
-Inspecting the DB 🛠️
+## Inspecting the DB 🛠️
 - Quick check helper: `scripts/check_messages.py` prints the row count and a
   sample of the latest rows.
 - You can also use `psql` inside the container or any Postgres client.
 
-Type checking ✅
+## Type checking ✅
 - We use `pyright` for static checks in CI and local verification. Install
   via `python -m pip install --user pyright` or `npm i -g pyright`.
 - Running `pyright` in the repo should report no errors with the current
   codebase (some optional warnings may appear for demo scripts).
 
-Helper scripts 🧰
+## Helper scripts 🧰
  - `scripts/clear_messages.py` — create table (if missing) and truncate messages
  - `scripts/check_messages.py` — print row count and sample rows
  - `scripts/print_pg.py` — print a sample of rows from Postgres for verification
 
-Testing notes 🧪
+## Testing notes 🧪
 - We intentionally avoid downloading media during crawls in the example
   fetcher to reduce rate limits. If you need media, add a dedicated media
   pipeline (download, upload to storage, persist references) and throttle it
   separately.
 
-Migrations and production 🚀
+## Migrations and production 🚀
 - This repo currently creates the `messages` table on demand. For long-term
   projects, add Alembic migrations, explicit schema versions, and CI tests to
   validate migrations.
-
 
 If you want me to update the README further (more examples, a troubleshooting
 section, or platform-specific instructions), tell me which parts to expand
