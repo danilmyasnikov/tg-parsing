@@ -16,7 +16,7 @@ from .config import get_api_credentials, load_config
 
 # Entity resolution & parsing
 from .entity_resolver import resolve_entity
-from .stream import iter_messages_from_entity
+from .stream import stream_messages
 
 # Fetcher
 from .consumer import fetch_all_messages
@@ -38,7 +38,7 @@ __all__ = [
 
 	# entity / parser
 	'resolve_entity',
-	'iter_messages_from_entity',
+	'stream_messages',
 
 	# fetcher
 	'fetch_all_messages',

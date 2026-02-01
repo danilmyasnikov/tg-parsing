@@ -4,7 +4,7 @@ import asyncio
 from telethon.errors import FloodWaitError
 from telethon.tl.custom.message import Message
 
-from .stream import iter_messages_from_entity
+from .stream import stream_messages
 from .storage import print_store
 
 
@@ -22,7 +22,7 @@ async def fetch_all_messages(
     """
     count = 0
     try:
-        async for m in iter_messages_from_entity(client, entity, resume_after_id=resume_after_id, limit=limit):
+        async for m in stream_messages(client, entity, resume_after_id=resume_after_id, limit=limit):
             if store_func is not None:
                 try:
                     await store_func(m)

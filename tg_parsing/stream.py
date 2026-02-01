@@ -7,7 +7,7 @@ from telethon.tl.custom.message import Message
 from .type_annotations import Entity
 
 
-async def iter_messages_from_entity(
+async def stream_messages(
     client: TelegramClient,
     entity,
     *,
@@ -39,7 +39,7 @@ async def iter_messages_from_entity(
         print(f'FloodWaitError: sleeping for {wait}s before resuming')
         await asyncio.sleep(wait + 1)
         # resume and yield remaining messages
-        async for m in iter_messages_from_entity(
+        async for m in stream_messages(
             client, entity, resume_after_id=resume_after_id, limit=(None if limit is None else max(0, limit - count))
         ):
             yield m
