@@ -43,7 +43,7 @@ On first run a Telethon session file will be created (ignored by git).
  - `type_annotations.py` — type aliases used for editor/type-checker convenience
  - `entity_resolver.py` — resolve CLI `target` to a Telethon entity
  - `stream.py` — async message iterators (resumable)
- - `message_fetcher.py` — consumes `stream` and calls a `store_func` for each message
+ - `consumer.py` — consumes `stream` and calls a `store_func` for each message
  - `storage/` — storage package exposing `print_store`, `postgres_store` and pool helpers
  - `export_targets.py` — exports dialog identifiers
 -- `collect.py` — CLI runner used during development/testing

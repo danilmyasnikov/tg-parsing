@@ -19,7 +19,7 @@ from .entity_resolver import resolve_entity
 from .stream import iter_messages_from_entity
 
 # Fetcher
-from .message_fetcher import fetch_all_messages
+from .consumer import fetch_all_messages
 
 # Storage
 from .storage import (
