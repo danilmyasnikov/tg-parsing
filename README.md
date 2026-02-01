@@ -5,10 +5,6 @@ and fetching channel messages. The codebase is intentionally minimal and
 focused on a reproducible developer workflow with an async Postgres sink for
 message storage.
 
-This README documents a detailed developer setup, how to run the fetcher,
-database wiring (Docker), and notes about recent design changes in the code
-(pool initialization, PEP-604 typing, race-safe pool creation).
-
 ## Prerequisites 🚧
  - Python 3.10+ (project uses PEP-604 `X | None` annotations)
  - Git
@@ -37,6 +33,8 @@ TG_PHONE=+7999xxxxxxx
 SESSION_NAME=session
 ```
 
+Obtain `TG_API_ID` and `TG_API_HASH` from https://my.telegram.org (open "API development tools" and create a new application to receive your credentials).
+
 On first run a Telethon session file will be created (ignored by git).
 
 ## Repository layout (high level)
@@ -63,7 +61,34 @@ On first run a Telethon session file will be created (ignored by git).
 
 ## Running Postgres for development (Docker) 🐘
 
-Quick one-liner (PowerShell):
+Recommended: use the included `docker-compose.yml` for a reproducible local Postgres service.
+
+Advantages:
+- single command setup for all developers
+- managed volumes and networking in the compose file
+- easy to view logs, restart, and teardown without retyping options
+
+Quick start (PowerShell):
+
+```powershell
+# Start Postgres in detached mode (recommended)
+docker compose up -d
+
+# Follow Postgres logs
+docker compose logs -f postgres
+
+# Stop services (preserves volumes):
+docker compose down
+
+# Stop and remove volumes (start fresh):
+docker compose down -v
+```
+
+Notes:
+- Use `docker compose` (built-in plugin) rather than the old `docker-compose` binary on modern Docker engines.
+- The compose file in this repository defines the `postgres` service and a named volume for persistent data.
+
+Fallback (single-container one-liner):
 
 ```powershell
 docker run --name tg-postgres `
@@ -73,12 +98,6 @@ docker run --name tg-postgres `
   -p 5432:5432 `
   -v pgdata:/var/lib/postgresql/data `
   -d postgres:15
-```
-
-Alternatively use the included `docker-compose.yml` and run:
-
-```powershell
-docker compose up -d
 ```
 
 Set the DSN for the current shell session (PowerShell example):
@@ -95,21 +114,21 @@ This project uses a hybrid approach where your Python application runs on your h
 ┌──────────────────────────────────────────┐
 │  Your Windows/Mac machine                │
 │                                          │
-│  ┌────────────────────────────────┐     │
-│  │ Python app runs HERE           │     │
-│  │ (fetch_messages.py)            │     │
-│  │ Uses: .venv + Python 3.10      │     │
-│  └────────────┬───────────────────┘     │
+│  ┌────────────────────────────────┐      │
+│  │ Python app runs HERE           │      │
+│  │ (fetch_messages.py)            │      │
+│  │ Uses: .venv + Python 3.10      │      │
+│  └────────────┬───────────────────┘      │
 │               │                          │
 │               │ connects to              │
 │               │ (localhost:5432)         │
 │               │                          │
 │               ▼                          │
-│  ┌────────────────────────────────┐     │
-│  │ Docker container               │     │
-│  │ postgres:15 (Debian-based)     │     │
-│  │ Port: 5432                     │     │
-│  └────────────────────────────────┘     │
+│  ┌────────────────────────────────┐      │
+│  │ Docker container               │      │
+│  │ postgres:15 (Debian-based)     │      │
+│  │ Port: 5432                     │      │
+│  └────────────────────────────────┘      │
 └──────────────────────────────────────────┘
 ```
 
@@ -139,11 +158,6 @@ This project uses a hybrid approach where your Python application runs on your h
   sample of the latest rows.
 - You can also use `psql` inside the container or any Postgres client.
 
-## Type checking ✅
-- We use `pyright` for static checks in CI and local verification. Install
-  via `python -m pip install --user pyright` or `npm i -g pyright`.
-- Running `pyright` in the repo should report no errors with the current
-  codebase (some optional warnings may appear for demo scripts).
 
 ## Helper scripts 🧰
  - `scripts/clear_messages.py` — create table (if missing) and truncate messages
@@ -164,6 +178,3 @@ This project uses a hybrid approach where your Python application runs on your h
 If you want me to update the README further (more examples, a troubleshooting
 section, or platform-specific instructions), tell me which parts to expand
 and I'll patch the file. ✨
-
-If you want, I can implement the SQLite prototype next and wire a small `store_func`
-that writes minimal message metadata for benchmarking.
