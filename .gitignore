@@ -2,6 +2,7 @@
 .env
 # Telethon / session files
 *.session
+.sessions/
 # Local config with private IDs or invite links — do not commit
 config.json
 # Compiled Python files and caches produced during runs
