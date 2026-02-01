@@ -20,7 +20,12 @@ This file groups short-term and long-term work. Tasks are ordered by priority â€
 - [ ] Add unit tests & CI (due 2026-02-18)
 - [ ] Add logging and verbosity option
 - [ ] Export targets as structured records (id/username/type/access_hash)
-- [ ] Add progress/ETA display to `fetch_all_messages` (show ETA, respect FloodWait)
+ - [ ] Add progress/ETA display to `fetch_all_messages` (show ETA, respect FloodWait)
+   - Recommendation: consider using `tqdm` for local CLI progress bars â€” it's lightweight,
+     well-maintained, and easy to integrate by updating a counter as messages are processed.
+     For async flows you can call `tqdm.update()` from the consumer or use manual wrappers;
+     for long-running/background ingestion prefer metrics/logging (Prometheus) rather than
+     a transient progress bar. Ensure the progress display accounts for `FloodWait` sleeps.
 - [ ] Implement checkpointing / resume for message fetching
   - Description: persist last-processed message id and resume ingestion; use DB-driven deduplication and support Telethon `min_id`/`max_id`. Keep behavior idempotent and add tests.
  
