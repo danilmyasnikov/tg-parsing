@@ -8,18 +8,14 @@ from __future__ import annotations
 import argparse
 import asyncio
 
-from tg_parsing.client import create_client
 import os
-from tg_parsing.config import get_api_credentials
-import tg_parsing.entity_resolver as resolver
-import tg_parsing.message_fetcher as fetcher
-from tg_parsing.storage import postgres_store, pg_pool_context
+import tg_parsing as tg
 
 
 async def main(target: str, session: str = 'session', limit: int = 3, pg_dsn: str | None = None) -> int:
-    api_id, api_hash = get_api_credentials()
-    async with create_client(session, api_id, api_hash) as client:
-        entity = await resolver.resolve_entity(client, target)
+    api_id, api_hash = tg.get_api_credentials()
+    async with tg.create_client(session, api_id, api_hash) as client:
+        entity = await tg.resolve_entity(client, target)
         if entity is None:
             print('Could not resolve target:', target)
             return 2
@@ -30,14 +26,14 @@ async def main(target: str, session: str = 'session', limit: int = 3, pg_dsn: st
             
         # Prefer explicit PG DSN (CLI) then environment variable `PG_DSN`.
         if pg_dsn:
-            async with pg_pool_context(pg_dsn) as pool:
-                store_fn = lambda m: postgres_store(m, pool=pool)
-                count = await fetcher.fetch_all_messages(client, entity, store_fn, limit=limit)
+            async with tg.pg_pool_context(pg_dsn) as pool:
+                store_fn = lambda m: tg.postgres_store(m, pool=pool)
+                count = await tg.fetch_all_messages(client, entity, store_fn, limit=limit)
                 print(f'Processed {count} messages')
         else:
             # fall back to module-level pool if previously initialized
-            store_fn = postgres_store
-            count = await fetcher.fetch_all_messages(client, entity, store_fn, limit=limit)
+            store_fn = tg.postgres_store
+            count = await tg.fetch_all_messages(client, entity, store_fn, limit=limit)
             print(f'Processed {count} messages')
         return 0
 
