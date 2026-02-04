@@ -9,9 +9,9 @@ async def main(dsn: str | None = None):
     conn = await asyncpg.connect(dsn)
     rows = await conn.fetch('SELECT COUNT(*) as c FROM messages')
     print('rows in messages:', rows[0]['c'])
-    sample = await conn.fetch('SELECT id,date,sender_id,text,has_media FROM messages ORDER BY id DESC LIMIT 3')
+    sample = await conn.fetch('SELECT id,date,sender_id,text,has_media FROM messages ORDER BY date DESC LIMIT 3')
     print('latest 3 rows:')
-    for r in sample:
+    for r in reversed(sample):
         print(r)
     await conn.close()
 
