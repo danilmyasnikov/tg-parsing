@@ -9,13 +9,13 @@ import argparse
 import asyncio
 
 import os
-import collector as tg
+import collector
 
 
 async def main(target: str, session: str = 'session', limit: int = 3, pg_dsn: str | None = None) -> int:
-    api_id, api_hash = tg.get_api_credentials()
-    async with tg.create_client(session, api_id, api_hash) as client:
-        entity = await tg.resolve_entity(client, target)
+    api_id, api_hash = collector.get_api_credentials()
+    async with collector.create_client(session, api_id, api_hash) as client:
+        entity = await collector.resolve_entity(client, target)
         if entity is None:
             print('Could not resolve target:', target)
             return 2
@@ -26,14 +26,14 @@ async def main(target: str, session: str = 'session', limit: int = 3, pg_dsn: st
             
         # Prefer explicit PG DSN (CLI) then environment variable `PG_DSN`.
         if pg_dsn:
-            async with tg.pg_pool_context(pg_dsn) as pool:
-                store_fn = lambda m: tg.postgres_store(m, pool=pool)
-                count = await tg.consume_messages(client, entity, store_fn, limit=limit)
+            async with collector.pg_pool_context(pg_dsn) as pool:
+                store_fn = lambda m: collector.postgres_store(m, pool=pool)
+                count = await collector.consume_messages(client, entity, store_fn, limit=limit)
                 print(f'Processed {count} messages')
         else:
             # fall back to module-level pool if previously initialized
-            store_fn = tg.postgres_store
-            count = await tg.consume_messages(client, entity, store_fn, limit=limit)
+            store_fn = collector.postgres_store
+            count = await collector.consume_messages(client, entity, store_fn, limit=limit)
             print(f'Processed {count} messages')
         return 0
 

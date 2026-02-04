@@ -21,15 +21,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from collector.type_annotations import Entity
 
-import collector as tg
+import collector
 
 
 async def gather_targets(output: str, session: str = 'session', limit: int | None = None) -> int:
     try:
-        api_id, api_hash = tg.get_api_credentials()
+        api_id, api_hash = collector.get_api_credentials()
     except RuntimeError as err:
         print(err)
-        if not tg.DOTENV_AVAILABLE:
+        if not collector.DOTENV_AVAILABLE:
             print('Tip: create a .env file and install python-dotenv to load it automatically.')
             print('Example .env content:')
             print('TG_API_ID=123456')
@@ -40,7 +40,7 @@ async def gather_targets(output: str, session: str = 'session', limit: int | Non
 
     targets: list[str | int] = []
 
-    async with tg.create_client(session, api_id, api_hash) as client:
+    async with collector.create_client(session, api_id, api_hash) as client:
         if limit is None:
             dialogs = [d async for d in client.iter_dialogs()]
         else:

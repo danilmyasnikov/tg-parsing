@@ -157,11 +157,11 @@ This project uses a hybrid approach where your Python application runs on your h
 Package API examples (used by scripts and callers):
 
 ```python
-import collector as tg
+import collector
 
-api_id, api_hash = tg.get_api_credentials()
-# iterate messages: async for m in tg.stream_messages(client, entity): ...
-# consume into a store: await tg.consume_messages(client, entity, store_func, limit=100)
+api_id, api_hash = collector.get_api_credentials()
+# iterate messages: async for m in collector.stream_messages(client, entity): ...
+# consume into a store: await collector.consume_messages(client, entity, store_func, limit=100)
 ```
 
 ## Inspecting the DB 🛠️
