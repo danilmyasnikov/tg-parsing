@@ -8,8 +8,7 @@ This file groups short-term and long-term work. Tasks are ordered by priority â€
  - [ ] Create `vibecoding` branch and scaffold (due 2026-02-05)
    - Goal: create a feature branch named `vibecoding`, add an initial module/package skeleton, and push the branch to `origin` so work can proceed in isolation.
 
-- ## High priority
-- [ ] Implement DB migrations & schema (due 2026-02-01)
+## High priority
 - [ ] Handle Docker Engine not started in `dev_bootstrap` (scripts/dev_bootstrap.ps1)
    - Goal: detect when Docker Engine/Daemon isn't running and either attempt to
      start Docker Desktop automatically (Windows) or show a clear, actionable
@@ -36,7 +35,6 @@ This file groups short-term and long-term work. Tasks are ordered by priority â€
    - Quick fixes: retry/backoff around `client.start()`, increase Telethon timeouts/retries, use a SOCKS/HTTP proxy if required by your network, and catch `FloodWaitError` to sleep when rate-limited.
    - Rationale: transient network or regional blocks can cause `TimeoutError` or repeated connection failures that block fetches; add notes and small code patterns in `collector/client.py`.
  
-
 ## Low priority / Backlog
 - [ ] Exporter improvements (skip-users flag)
 - [ ] Add linters/formatters: Black / Flake8 / Pylint
@@ -67,7 +65,7 @@ This file groups short-term and long-term work. Tasks are ordered by priority â€
   - Goal: local, zero-config store of minimal message metadata for quick benchmarking and debugging.
 - [x] Migrate core modules into a `tg_parsing` package
   - Goal: move application code into `tg_parsing/` to separate app logic from repo metadata and scripts; update imports, README, and CI.
- - [x] Implemented DB schema for `messages` (composite PK and TEXT sender_id)
+- [x] Implemented DB schema for `messages` (composite PK and TEXT sender_id)
    - Note: `scripts/clear_messages.py` recreates the table for local dev.
- - [x] Store posts in PostgreSQL (ingestion pipeline persisted messages)
- - [x] Integrated storage into main flow (consumer now normalizes messages and writes to Postgres)
+- [x] Store posts in PostgreSQL (ingestion pipeline persisted messages)
+- [x] Integrated storage into main flow (consumer now normalizes messages and writes to Postgres)
