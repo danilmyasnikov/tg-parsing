@@ -28,6 +28,11 @@ This file groups short-term and long-term work. Tasks are ordered by priority â€
      a transient progress bar. Ensure the progress display accounts for `FloodWait` sleeps.
 - [ ] Implement checkpointing / resume for message fetching
   - Description: persist last-processed message id and resume ingestion; use DB-driven deduplication and support Telethon `min_id`/`max_id`. Keep behavior idempotent and add tests.
+
+ - [ ] Telethon connectivity troubleshooting (priority: Medium)
+   - Short: document transient connection fixes and mitigations.
+   - Quick fixes: retry/backoff around `client.start()`, increase Telethon timeouts/retries, use a SOCKS/HTTP proxy if required by your network, and catch `FloodWaitError` to sleep when rate-limited.
+   - Rationale: transient network or regional blocks can cause `TimeoutError` or repeated connection failures that block fetches; add notes and small code patterns in `collector/client.py`.
  
 
 ## Low priority / Backlog
