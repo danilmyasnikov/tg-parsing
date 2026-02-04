@@ -15,7 +15,7 @@ from .client import create_client
 from .config import get_api_credentials, load_config
 
 # Entity resolution & parsing
-from .entity_resolver import resolve_entity
+from .resolve import resolve
 from .stream import stream_messages
 
 # Fetcher
@@ -37,7 +37,7 @@ __all__ = [
 	'load_config',
 
 	# entity / parser
-	'resolve_entity',
+	'resolve',
 	'stream_messages',
 
 	# fetcher

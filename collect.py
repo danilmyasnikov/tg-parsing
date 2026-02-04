@@ -15,7 +15,7 @@ import collector
 async def main(target: str, session: str = 'session', limit: int = 3, pg_dsn: str | None = None) -> int:
     api_id, api_hash = collector.get_api_credentials()
     async with collector.create_client(session, api_id, api_hash) as client:
-        entity = await collector.resolve_entity(client, target)
+        entity = await collector.resolve(client, target)
         if entity is None:
             print('Could not resolve target:', target)
             return 2
