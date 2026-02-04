@@ -9,6 +9,7 @@ from telethon.tl.custom.message import Message
 
 from .stream import stream_messages
 from .storage import print_store
+from .normalize import normalize_message, NormalizedMessage
 
 
 async def consume_messages(
@@ -26,9 +27,17 @@ async def consume_messages(
     count = 0
     try:
         async for m in stream_messages(client, entity, resume_after_id=resume_after_id, limit=limit):
+            # Validate/normalize the message before handing to store_func.
+            try:
+                normalized = normalize_message(m)
+            except Exception as e:
+                print(f"Skipping message {getattr(m, 'id', None)!r}: normalization failed: {e}")
+                # skip storing this message and continue with the stream
+                continue
+
             if store_func is not None:
                 try:
-                    await store_func(m)
+                    await store_func(normalized)
                 except Exception as e:
                     print('Warning: store_func raised:', e)
             else:

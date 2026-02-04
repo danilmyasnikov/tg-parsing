@@ -10,6 +10,9 @@ except ImportError:
 
 if TYPE_CHECKING:
     from asyncpg.pool import Pool as AsyncpgPool
+    # Telethon Message type for static typing (import only during type checking)
+    from telethon.tl.custom.message import Message as TgMessage
+    from ..normalize import NormalizedMessage
 else:
     class AsyncpgPool:  # runtime fallback for editors that evaluate symbols
         pass
@@ -70,7 +73,7 @@ async def pg_pool_context(pg_dsn: str, min_size: int = 1, max_size: int = 10):
         await close_pg_pool()
 
 
-async def postgres_store(m, pool: AsyncpgPool | None = None, dsn: str | None = None) -> None:
+async def postgres_store(m: 'NormalizedMessage', pool: AsyncpgPool | None = None, dsn: str | None = None) -> None:
     """Store a message record into PostgreSQL using `asyncpg`.
 
     This function mirrors the previous `postgres_store` from the top-level storage.
@@ -85,45 +88,38 @@ async def postgres_store(m, pool: AsyncpgPool | None = None, dsn: str | None = N
         else:
             raise RuntimeError('Postgres pool not initialized; call init_pg_pool(dsn) or pass pool=')
 
-    mid = getattr(m, 'id', None)
-    date = getattr(m, 'date', None)
-    sender = getattr(m, 'sender_id', None)
-    text = (getattr(m, 'text', '') or '').replace('\n', ' ')
-    has_media = bool(getattr(m, 'media', None))
-
-    # prefer native datetime when possible; asyncpg will accept str or datetime
-    date_val = None
-    if date is not None:
-        try:
-            date_val = date
-        except Exception:
-            date_val = str(date)
+    # This function expects a NormalizedMessage produced by
+    # `collector.normalize.normalize_message()`; callers must ensure
+    # messages are normalized before calling this function.
+    nm = m
 
     async with p.acquire() as conn:
+        # Use a composite primary key (sender_id, id) so message ids are
+        # unique per sender/chat and cannot collide across different senders.
         await conn.execute(
             """
             CREATE TABLE IF NOT EXISTS messages (
-                id BIGINT PRIMARY KEY,
+                sender_id TEXT,
+                id BIGINT,
                 date TIMESTAMP WITH TIME ZONE,
-                sender_id BIGINT,
                 text TEXT,
-                has_media BOOLEAN
+                has_media BOOLEAN,
+                PRIMARY KEY (sender_id, id)
             )
             """
         )
         await conn.execute(
             """
-            INSERT INTO messages (id, date, sender_id, text, has_media)
+            INSERT INTO messages (sender_id, id, date, text, has_media)
             VALUES ($1, $2, $3, $4, $5)
-            ON CONFLICT (id) DO UPDATE
+            ON CONFLICT (sender_id, id) DO UPDATE
             SET date = EXCLUDED.date,
-                sender_id = EXCLUDED.sender_id,
                 text = EXCLUDED.text,
                 has_media = EXCLUDED.has_media
             """,
-            mid,
-            date_val,
-            sender,
-            text,
-            has_media,
+            nm.sender,
+            nm.id,
+            nm.date,
+            nm.text,
+            nm.has_media,
         )

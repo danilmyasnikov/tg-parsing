@@ -1,19 +1,27 @@
 from __future__ import annotations
-from telethon.tl.custom.message import Message
+from typing import Any
+from ..normalize import NormalizedMessage
 
 
-async def print_store(m: Message) -> None:
+async def print_store(m: Any) -> None:
     """Async console storage used by small runners/tests.
 
-    Consolidates message printing here and uses `getattr` to avoid
-    attribute errors when fields are missing.
+    Accepts either the original Telethon `Message` or a
+    `NormalizedMessage` produced by `normalize_message()`.
     """
     print('--- Latest message ---')
-    mid = getattr(m, 'id', None)
-    date = getattr(m, 'date', None)
-    sender = getattr(m, 'sender_id', None)
-    text = (getattr(m, 'text', '') or '').replace('\n', ' ')
-    has_media = bool(getattr(m, 'media', None))
+    if isinstance(m, NormalizedMessage):
+        mid = m.id
+        date = m.date
+        sender = m.sender
+        text = m.text
+        has_media = m.has_media
+    else:
+        mid = getattr(m, 'id', None)
+        date = getattr(m, 'date', None)
+        sender = getattr(m, 'sender_id', None)
+        text = (getattr(m, 'text', '') or '').replace('\n', ' ')
+        has_media = bool(getattr(m, 'media', None))
 
     print('id:', mid)
     print('date:', date)

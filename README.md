@@ -154,6 +154,18 @@ This project uses a hybrid approach where your Python application runs on your h
 .venv\Scripts\python.exe collect.py 2118600117 --limit 100 --pg-dsn "postgresql://pguser:pgpass@localhost:5432/tgdata"
 ```
 
+## Telethon connectivity (priority: Medium)
+
+If you see transient connection errors (e.g. "Attempt 1 at connecting failed: TimeoutError") the problem is usually network-related rather than the Telegram API. Short, actionable fixes:
+
+- **Retry/backoff:** wrap `client.start()` with a few retries and exponential backoff (this repo now retries by default).
+- **Increase timeouts/retries:** relax Telethon timeouts or request retry settings when creating the client.
+- **Use a proxy when needed:** set a SOCKS/HTTP proxy if your network or region restricts direct Telegram connections.
+- **Check local network/firewall:** ensure outbound TCP/UDP to Telegram is allowed (or use Docker/WSL networking correctly).
+- **Handle rate limits:** catch `FloodWaitError` and sleep the required seconds before retrying.
+
+If the issue persists, enable debug logging for Telethon and inspect network/path issues; raise priority to High if it blocks CI or repeated runs.
+
 Package API examples (used by scripts and callers):
 
 ```python

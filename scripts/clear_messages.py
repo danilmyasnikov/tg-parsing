@@ -9,18 +9,22 @@ async def main():
     print('Using DSN:', dsn)
     conn = await asyncpg.connect(dsn)
     try:
+        # Ensure table schema matches the storage implementation in
+        # `collector/storage/postgres_store.py` which uses a composite
+        # primary key (sender_id, id) and stores `sender_id` as TEXT.
+        await conn.execute('DROP TABLE IF EXISTS messages;')
         await conn.execute(
             '''
-            CREATE TABLE IF NOT EXISTS messages (
-                id BIGINT PRIMARY KEY,
+            CREATE TABLE messages (
+                sender_id TEXT,
+                id BIGINT,
                 date TIMESTAMP WITH TIME ZONE,
-                sender_id BIGINT,
                 text TEXT,
-                has_media BOOLEAN
+                has_media BOOLEAN,
+                PRIMARY KEY (sender_id, id)
             )
             '''
         )
-        await conn.execute('TRUNCATE TABLE messages;')
         # Verify the table is empty after truncate. If it's not, exit non-zero.
         row_count = await conn.fetchval('SELECT COUNT(*) FROM messages')
         if row_count != 0:
