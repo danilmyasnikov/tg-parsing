@@ -41,8 +41,9 @@ On first run a Telethon session file will be created (ignored by git).
  - `collector/` — package containing the core library APIs used by the CLI and scripts:
    - `client.py` — async Telethon client context manager
    - `config.py` — load `config.json` and environment credentials
-   - `type_annotations.py` — type aliases used for editor/type-checker convenience
-   - `entity_resolver.py` — resolve CLI `target` to a Telethon entity
+  - `type_annotations.py` — type aliases used for editor/type-checker convenience
+  - `resolve.py` — resolve CLI `target` to a Telethon entity (renamed from `entity_resolver.py`)
+  - `normalize.py` — validation/normalization helpers; returns a `NormalizedMessage` dataclass used before persistence
    - `stream.py` — async message iterator (`stream_messages`)
    - `consumer.py` — consumer wrapper (`consume_messages`)
    - `storage/` — storage helpers exposing `print_store`, `postgres_store` and pool helpers
@@ -180,6 +181,13 @@ api_id, api_hash = collector.get_api_credentials()
 - Quick check helper: `scripts/check_messages.py` prints the row count and a
   sample of the latest rows.
 - You can also use `psql` inside the container or any Postgres client.
+
+**DB schema note:** the local development `messages` table uses a composite
+primary key `(sender_id TEXT, id BIGINT)` so message ids from different
+channels/users do not collide. The `scripts/clear_messages.py` script now
+recreates the table with `sender_id TEXT` and the composite primary key.
+If you need to preserve an existing production dataset, perform an explicit
+export-transform-import or migration (not automated in this repo).
 
 
 ## Helper scripts 🧰
