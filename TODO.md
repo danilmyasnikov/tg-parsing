@@ -13,6 +13,12 @@ This file groups short-term and long-term work. Tasks are ordered by priority â€
 ## High priority
 - [ ] Implement DB migrations & schema (due 2026-02-01)
 - [ ] Integrate storage into main flow
+- [ ] Handle Docker Engine not started in `dev_bootstrap` (scripts/dev_bootstrap.ps1)
+   - Goal: detect when Docker Engine/Daemon isn't running and either attempt to
+     start Docker Desktop automatically (Windows) or show a clear, actionable
+     message with instructions to start Docker. This should reduce confusing
+     bootstrap failures; prefer an automatic start where safe, otherwise fail
+     fast with guidance. Priority: **High**.
 
 ## Medium priority
 - [ ] Evaluate and plan migration to OOP design
