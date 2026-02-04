@@ -4,7 +4,7 @@ This file groups short-term and long-term work. Tasks are ordered by priority â€
 
 ## Urgent (ASAP)
  - [ ] Retrieve all posts using PostgreSQL (migrate from prototype; due 2026-02-30)
-  - Goal: reliably iterate channel history and persist every message into Postgres (use migrations, checkpoints, and deduplication).
+    - Goal: reliably iterate channel history and persist every message into Postgres (use migrations, checkpoints, and deduplication).
  - [ ] Create `vibecoding` branch and scaffold (due 2026-02-05)
    - Goal: create a feature branch named `vibecoding`, add an initial module/package skeleton, and push the branch to `origin` so work can proceed in isolation.
 
