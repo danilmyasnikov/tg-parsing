@@ -1,16 +1,15 @@
 # TG-parsing — Developer README
 
-This repository contains small Telethon-based utilities for inspecting dialogs
-and fetching channel messages. The codebase is intentionally minimal and
-focused on a reproducible developer workflow with an async Postgres sink for
-message storage.
+A small collection of Telethon-based utilities for inspecting dialogs and
+fetching channel messages. The project provides a simple developer workflow
+and an async Postgres sink for message storage.
 
-## Prerequisites 🚧
- - Python 3.10+ (project uses PEP-604 `X | None` annotations)
- - Git
- - Docker (recommended for Postgres local dev)
+## Prerequisites
+- Python 3.10+
+- Git
+- Docker (recommended for local Postgres)
 
-## Quick local setup (PowerShell) ⚙️
+## Quick local setup (PowerShell)
 
 ```powershell
 python -m venv .venv
@@ -19,7 +18,7 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-## Credentials (.env) 🔐
+## Credentials (.env)
 
 Create a `.env` file in the project root (do NOT commit) with your Telegram
 credentials. Example:
@@ -33,27 +32,19 @@ TG_PHONE=+7999xxxxxxx
 SESSION_NAME=session
 ```
 
-Obtain `TG_API_ID` and `TG_API_HASH` from https://my.telegram.org (open "API development tools" and create a new application to receive your credentials).
-
-On first run a Telethon session file will be created (ignored by git).
+Obtain `TG_API_ID` and `TG_API_HASH` from https://my.telegram.org (API
+development tools).
 
 ## Repository layout (high level)
- - `collector/` — package containing the core library APIs used by the CLI and scripts:
-   - `client.py` — async Telethon client context manager
-   - `config.py` — load `config.json` and environment credentials
-  - `type_annotations.py` — type aliases used for editor/type-checker convenience
-  - `resolve.py` — resolve CLI `target` to a Telethon entity (renamed from `entity_resolver.py`)
-  - `normalize.py` — validation/normalization helpers; returns a `NormalizedMessage` dataclass used before persistence
-   - `stream.py` — async message iterator (`stream_messages`)
-   - `consumer.py` — consumer wrapper (`consume_messages`)
-   - `storage/` — storage helpers exposing `print_store`, `postgres_store` and pool helpers
- - `collect.py` — CLI runner used during development/testing (uses the `collector` package)
- - `export_targets.py` — exports dialog identifiers
- - `scripts/` — helper scripts (truncate/inspect DB)
+- `collector/` — core library used by the CLI and scripts (client, config,
+  normalization, streaming, consumer and storage helpers)
+- `collect.py` — CLI runner used during development/testing
+- `export_targets.py` — export dialog identifiers
+- `scripts/` — helper scripts (truncate/inspect DB)
 
 ## Config example
 
-`config.json` contains one key `targets` with numeric ids or usernames:
+`config.json` contains a `targets` array with numeric ids or usernames, e.g.: 
 
 ```json
 {
@@ -61,151 +52,55 @@ On first run a Telethon session file will be created (ignored by git).
 }
 ```
 
-## Running Postgres for development (Docker) 🐘
+## Running Postgres for development
 
-Recommended: use the included `docker-compose.yml` for a reproducible local Postgres service.
-
-Advantages:
-- single command setup for all developers
-- managed volumes and networking in the compose file
-- easy to view logs, restart, and teardown without retyping options
-
-Quick start (PowerShell):
+Use the included `docker-compose.yml` to run a local Postgres instance:
 
 ```powershell
-# Start Postgres in detached mode (recommended)
 docker compose up -d
-
-# Follow Postgres logs
 docker compose logs -f postgres
-
-# Stop services (preserves volumes):
 docker compose down
-
-# Stop and remove volumes (start fresh):
-docker compose down -v
 ```
 
-Notes:
-- Use `docker compose` (built-in plugin) rather than the old `docker-compose` binary on modern Docker engines.
-- The compose file in this repository defines the `postgres` service and a named volume for persistent data.
-
-Fallback (single-container one-liner):
+Or run a single container:
 
 ```powershell
-docker run --name tg-postgres `
-  -e POSTGRES_USER=pguser `
-  -e POSTGRES_PASSWORD=pgpass `
-  -e POSTGRES_DB=tgdata `
-  -p 5432:5432 `
-  -v pgdata:/var/lib/postgresql/data `
+docker run --name tg-postgres \\
+  -e POSTGRES_USER=pguser \\
+  -e POSTGRES_PASSWORD=pgpass \\
+  -e POSTGRES_DB=tgdata \\
+  -p 5432:5432 \\
+  -v pgdata:/var/lib/postgresql/data \\
   -d postgres:15
 ```
 
-Set the DSN for the current shell session (PowerShell example):
+Set the DSN for a PowerShell session:
 
 ```powershell
 $env:PG_DSN = 'postgresql://pguser:pgpass@localhost:5432/tgdata'
 ```
 
-## Architecture Overview 🏗️
+## Running the fetcher
 
-This project uses a hybrid approach where your Python application runs on your host machine and connects to a Dockerized Postgres database:
-
-```
-┌──────────────────────────────────────────┐
-│  Your Windows/Mac machine                │
-│                                          │
-│  ┌────────────────────────────────┐      │
-│  │ Python app runs HERE           │      │
-│  │ (collect.py)                   │      |
-│  │ Uses: .venv + Python 3.10      │      │
-│  └────────────┬───────────────────┘      │
-│               │                          │
-│               │ connects to              │
-│               │ (localhost:5432)         │
-│               │                          │
-│               ▼                          │
-│  ┌────────────────────────────────┐      │
-│  │ Docker container               │      │
-│  │ postgres:15 (Debian-based)     │      │
-│  │ Port: 5432                     │      │
-│  └────────────────────────────────┘      │
-└──────────────────────────────────────────┘
-```
-
-**Why this setup?**
-- ✅ Easy Python debugging (runs natively on your machine)
-- ✅ Consistent Postgres version across all developers
-- ✅ No need to install Postgres system-wide
-- ✅ Simple to tear down and recreate the database
-
-## Running the fetcher (clean run) ▶️
-
-1. Optional: truncate the messages table for a clean test (we provide
-   `scripts/clear_messages.py` which ensures the table exists and truncates it):
+Optional: truncate the messages table for a clean test:
 
 ```powershell
-.venv\Scripts\python.exe scripts\clear_messages.py
+.venv\\Scripts\\python.exe scripts\\clear_messages.py
 ```
 
-2. Run the fetcher for a target id (write into Postgres):
+Run the fetcher for a target id:
 
 ```powershell
-.venv\Scripts\python.exe collect.py 2118600117 --limit 100 --pg-dsn "postgresql://pguser:pgpass@localhost:5432/tgdata"
+.venv\\Scripts\\python.exe collect.py 2118600117 --limit 100 --pg-dsn "postgresql://pguser:pgpass@localhost:5432/tgdata"
 ```
 
-## Telethon connectivity (priority: Medium)
+## Helper scripts
+- `scripts/clear_messages.py` — create table (if missing) and truncate messages
+- `scripts/check_messages.py` — print row count and sample rows
+- `scripts/print_pg.py` — print a sample of rows from Postgres
 
-If you see transient connection errors (e.g. "Attempt 1 at connecting failed: TimeoutError") the problem is usually network-related rather than the Telegram API. Short, actionable fixes:
-
-- **Retry/backoff:** wrap `client.start()` with a few retries and exponential backoff (this repo now retries by default).
-- **Increase timeouts/retries:** relax Telethon timeouts or request retry settings when creating the client.
-- **Use a proxy when needed:** set a SOCKS/HTTP proxy if your network or region restricts direct Telegram connections.
-- **Check local network/firewall:** ensure outbound TCP/UDP to Telegram is allowed (or use Docker/WSL networking correctly).
-- **Handle rate limits:** catch `FloodWaitError` and sleep the required seconds before retrying.
-
-If the issue persists, enable debug logging for Telethon and inspect network/path issues; raise priority to High if it blocks CI or repeated runs.
-
-Package API examples (used by scripts and callers):
-
-```python
-import collector
-
-api_id, api_hash = collector.get_api_credentials()
-# iterate messages: async for m in collector.stream_messages(client, entity): ...
-# consume into a store: await collector.consume_messages(client, entity, store_func, limit=100)
-```
-
-## Inspecting the DB 🛠️
-- Quick check helper: `scripts/check_messages.py` prints the row count and a
-  sample of the latest rows.
-- You can also use `psql` inside the container or any Postgres client.
-
-**DB schema note:** the local development `messages` table uses a composite
-primary key `(sender_id TEXT, id BIGINT)` so message ids from different
-channels/users do not collide. The `scripts/clear_messages.py` script now
-recreates the table with `sender_id TEXT` and the composite primary key.
-If you need to preserve an existing production dataset, perform an explicit
-export-transform-import or migration (not automated in this repo).
-
-
-## Helper scripts 🧰
- - `scripts/clear_messages.py` — create table (if missing) and truncate messages
- - `scripts/check_messages.py` — print row count and sample rows
- - `scripts/print_pg.py` — print a sample of rows from Postgres for verification
-
-## Testing notes 🧪
-- We intentionally avoid downloading media during crawls in the example
-  fetcher to reduce rate limits. If you need media, add a dedicated media
-  pipeline (download, upload to storage, persist references) and throttle it
-  separately.
-
-## Migrations and production 🚀
-- This repo currently creates the `messages` table on demand. For long-term
-  projects, add Alembic migrations, explicit schema versions, and CI tests to
-  validate migrations.
-
-If you want me to update the README further (more examples, a troubleshooting
-section, or platform-specific instructions), tell me which parts to expand
-and I'll patch the file. ✨
+## Notes
+- The example fetcher avoids downloading media to reduce rate limits. Add a
+  separate media pipeline if required.
+- For production use, add proper migrations (Alembic), schema versioning, and
+  CI validation for migrations.
