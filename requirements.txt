@@ -6,3 +6,4 @@ rsa==4.9.1
 Telethon==1.42.0
 python-dotenv
 asyncpg>=0.28
+google-genai>=0.5.0
