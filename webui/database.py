@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import os
-from typing import Optional
-from contextlib import asynccontextmanager
 
 try:
     import asyncpg
 except ImportError:
     asyncpg = None
+
+# Reuse the canonical pool helpers from collector.storage.postgres_store
+from collector.storage.postgres_store import init_pg_pool, close_pg_pool
 
 # Default PostgreSQL DSN - can be overridden via environment
 DEFAULT_PG_DSN = os.getenv(
@@ -17,25 +18,23 @@ DEFAULT_PG_DSN = os.getenv(
     "postgresql://pguser:pgpass@localhost:5432/tgdata"
 )
 
-_pool: Optional["asyncpg.Pool"] = None
 
 
 async def get_pool(dsn: str = DEFAULT_PG_DSN) -> "asyncpg.Pool":
-    """Get or create the database connection pool."""
-    global _pool
+    """Get or create the database connection pool.
+
+    This delegates to the shared pool initializer in
+    `collector.storage.postgres_store.init_pg_pool` so the project has a
+    single canonical pool implementation.
+    """
     if asyncpg is None:
         raise RuntimeError("asyncpg is not installed")
-    if _pool is None:
-        _pool = await asyncpg.create_pool(dsn, min_size=1, max_size=5)
-    return _pool
+    return await init_pg_pool(dsn)
 
 
 async def close_pool() -> None:
-    """Close the database connection pool."""
-    global _pool
-    if _pool is not None:
-        await _pool.close()
-        _pool = None
+    """Close the shared database connection pool via collector.storage."""
+    await close_pg_pool()
 
 
 async def get_unique_senders() -> list[dict]:
