@@ -2,6 +2,7 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING
 from contextlib import asynccontextmanager
+import os
 
 try:
     import asyncpg
@@ -89,6 +90,9 @@ async def get_conn(dsn: str | None = None):
     context automatically.
     """
     if _PG_MANAGER._pool is None:
+        # Try provided DSN, then environment PG_DSN, then error
+        if dsn is None:
+            dsn = os.getenv('PG_DSN')
         if dsn is None:
             raise RuntimeError('Postgres pool not initialized; call init_pg_pool(dsn) or provide dsn=')
         await init_pg_pool(dsn)

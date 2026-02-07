@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from pathlib import Path
 
 from .startup import lifespan
-from .routes import router
+from .api import router
 
 STATIC_DIR = Path(__file__).parent / "static"
 

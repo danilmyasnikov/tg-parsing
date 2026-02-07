@@ -3,9 +3,9 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 import logging
 
-from .database import get_unique_senders_conn, get_messages_by_senders_conn
+from ..database import get_unique_senders_conn, get_messages_by_senders_conn
 from collector.storage.postgres_store import get_conn
-from .llm import chat_with_context, get_available_models
+from ..llm import chat_with_context, get_available_models
 from .schemas import (
     ChatRequest,
     ChatResponse,
