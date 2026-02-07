@@ -104,3 +104,11 @@ Run the fetcher for a target id:
   separate media pipeline if required.
 - For production use, add proper migrations (Alembic), schema versioning, and
   CI validation for migrations.
+
+## Web UI Quickstart
+
+Quick steps to run the `webui` chat interface locally (PowerShell):
+
+```powershell
+.\.venv\Scripts\python -m webui
+```
