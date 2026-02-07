@@ -17,80 +17,101 @@ else:
     class AsyncpgPool:  # runtime fallback for editors that evaluate symbols
         pass
 
-# Module-level asyncpg pool (optional)
-_pg_pool: AsyncpgPool | None = None
-# Lock used to serialize lazy initialization of the module-level pool.
-# Shared `asyncio.Lock` ensures only one coroutine performs creation when
-# multiple coroutines attempt initialization concurrently.
-_pg_lock: asyncio.Lock = asyncio.Lock()
+# Encapsulate pool lifecycle in a manager class. Keep the old
+# module-level compatibility functions for existing callers.
+
+
+class PostgresPoolManager:
+    """Manage a single asyncpg pool with lazy init and a lock."""
+
+    def __init__(self) -> None:
+        self._pool: AsyncpgPool | None = None
+        self._lock: asyncio.Lock = asyncio.Lock()
+
+    async def init(self, dsn: str, min_size: int = 1, max_size: int = 10) -> AsyncpgPool:
+        if asyncpg is None:
+            raise RuntimeError('asyncpg is not installed; add it to requirements')
+        if self._pool is None:
+            async with self._lock:
+                if self._pool is None:
+                    self._pool = await asyncpg.create_pool(dsn, min_size=min_size, max_size=max_size)
+        return self._pool
+
+    async def close(self) -> None:
+        if self._pool is not None:
+            await self._pool.close()
+            self._pool = None
+
+    @asynccontextmanager
+    async def conn(self, dsn: str | None = None, min_size: int = 1, max_size: int = 10):
+        """Async context manager that yields a connection from the managed pool.
+
+        If the pool is not initialized and `dsn` is provided it will be
+        initialized lazily.
+        """
+        if self._pool is None:
+            if dsn is None:
+                raise RuntimeError('Postgres pool not initialized; call init_pg_pool(dsn) or pass dsn=')
+            await self.init(dsn, min_size=min_size, max_size=max_size)
+        async with self._pool.acquire() as conn:
+            yield conn
+
+
+# Canonical manager instance used by module-level helpers
+_PG_MANAGER = PostgresPoolManager()
 
 
 async def init_pg_pool(dsn: str, min_size: int = 1, max_size: int = 10) -> AsyncpgPool:
-    """Initialize and return a module-level asyncpg pool.
-
-    Raises a RuntimeError if `asyncpg` is not installed.
-    """
-    global _pg_pool, _pg_lock
-    if asyncpg is None:
-        raise RuntimeError('asyncpg is not installed; add it to requirements')
-    # Fast-path: avoid acquiring the lock if the pool is already initialized.
-    if _pg_pool is None:
-        # Acquire the shared lock so only one coroutine will perform creation.
-        # Using `async with` makes acquisition/release automatic even on error.
-        async with _pg_lock:
-            # Inside the lock do a second check (double-checked locking).
-            # Two or more coroutines can pass the outer `if` concurrently; the
-            # inner check guarantees only the coroutine that holds the lock
-            # will create and assign `_pg_pool`.
-            if _pg_pool is None:
-                _pg_pool = await asyncpg.create_pool(dsn, min_size=min_size, max_size=max_size)
-    return _pg_pool
+    """Compatibility wrapper: initialize and return the shared pool."""
+    return await _PG_MANAGER.init(dsn, min_size=min_size, max_size=max_size)
 
 
 async def close_pg_pool() -> None:
-    """Close the module-level asyncpg pool if initialized."""
-    global _pg_pool
-    if _pg_pool is not None:
-        await _pg_pool.close()
-        _pg_pool = None
+    """Compatibility wrapper: close the shared pool."""
+    await _PG_MANAGER.close()
 
 
 @asynccontextmanager
 async def pg_pool_context(pg_dsn: str, min_size: int = 1, max_size: int = 10):
-    """Async context manager that initializes the module-level PG pool.
-
-    The context will call `init_pg_pool(pg_dsn, ...)` on entry and
-    `close_pg_pool()` on exit.
-    """
-    if asyncpg is None:
-        raise RuntimeError('asyncpg is not installed; add it to requirements')
-
-    # initialize module-level pool (may reuse existing pool)
+    """Context manager that initializes the shared pool and closes it on exit."""
     await init_pg_pool(pg_dsn, min_size=min_size, max_size=max_size)
     try:
-        yield _pg_pool
+        yield _PG_MANAGER._pool
     finally:
         await close_pg_pool()
+
+
+async def get_conn(dsn: str | None = None):
+    """FastAPI dependency that yields a single connection.
+
+    Use in route handlers as: `conn = Depends(get_conn)`. Implemented as an
+    async generator so FastAPI can manage entering/exiting the connection
+    context automatically.
+    """
+    if _PG_MANAGER._pool is None:
+        if dsn is None:
+            raise RuntimeError('Postgres pool not initialized; call init_pg_pool(dsn) or provide dsn=')
+        await init_pg_pool(dsn)
+    async with _PG_MANAGER._pool.acquire() as conn:
+        yield conn
 
 
 async def postgres_store(m: 'NormalizedMessage', pool: AsyncpgPool | None = None, dsn: str | None = None) -> None:
     """Store a message record into PostgreSQL using `asyncpg`.
 
-    This function mirrors the previous `postgres_store` from the top-level storage.
+    This function preserves the original API but delegates to the
+    manager when possible.
     """
     if asyncpg is None:
         raise RuntimeError('asyncpg is not installed; cannot use postgres_store')
 
-    p = pool or _pg_pool
+    p = pool or _PG_MANAGER._pool
     if p is None:
         if dsn:
             p = await init_pg_pool(dsn)
         else:
             raise RuntimeError('Postgres pool not initialized; call init_pg_pool(dsn) or pass pool=')
 
-    # This function expects a NormalizedMessage produced by
-    # `collector.normalize.normalize_message()`; callers must ensure
-    # messages are normalized before calling this function.
     nm = m
 
     async with p.acquire() as conn:

@@ -38,42 +38,56 @@ async def close_pool() -> None:
 
 
 async def get_unique_senders() -> list[dict]:
-    """Get unique senders from the messages table."""
+    """Get unique senders from the messages table (pool-based wrapper)."""
     pool = await get_pool()
     async with pool.acquire() as conn:
-        rows = await conn.fetch(
-            """
-            SELECT DISTINCT sender_id, COUNT(*) as message_count
-            FROM messages
-            GROUP BY sender_id
-            ORDER BY sender_id
-            """
-        )
-        return [{"sender_id": row["sender_id"], "message_count": row["message_count"]} for row in rows]
+        return await get_unique_senders_conn(conn)
+
+
+async def get_unique_senders_conn(conn) -> list[dict]:
+    """Get unique senders using an already-acquired `asyncpg.Connection`.
+
+    This is useful for route handlers that use a FastAPI dependency that
+    provides a connection via `collector.storage.postgres_store.get_conn()`.
+    """
+    rows = await conn.fetch(
+        """
+        SELECT DISTINCT sender_id, COUNT(*) as message_count
+        FROM messages
+        GROUP BY sender_id
+        ORDER BY sender_id
+        """
+    )
+    return [{"sender_id": row["sender_id"], "message_count": row["message_count"]} for row in rows]
 
 
 async def get_messages_by_senders(sender_ids: list[str], limit: int = 100) -> list[dict]:
-    """Get messages from specified senders."""
+    """Get messages from specified senders (pool-based wrapper)."""
     pool = await get_pool()
     async with pool.acquire() as conn:
-        rows = await conn.fetch(
-            """
-            SELECT sender_id, id, date, text, has_media
-            FROM messages
-            WHERE sender_id = ANY($1)
-            ORDER BY date DESC
-            LIMIT $2
-            """,
-            sender_ids,
-            limit,
-        )
-        return [
-            {
-                "sender_id": row["sender_id"],
-                "id": row["id"],
-                "date": row["date"].isoformat() if row["date"] else None,
-                "text": row["text"],
-                "has_media": row["has_media"],
-            }
-            for row in rows
-        ]
+        return await get_messages_by_senders_conn(conn, sender_ids, limit)
+
+
+async def get_messages_by_senders_conn(conn, sender_ids: list[str], limit: int = 100) -> list[dict]:
+    """Get messages from specified senders using an acquired `asyncpg.Connection`."""
+    rows = await conn.fetch(
+        """
+        SELECT sender_id, id, date, text, has_media
+        FROM messages
+        WHERE sender_id = ANY($1)
+        ORDER BY date DESC
+        LIMIT $2
+        """,
+        sender_ids,
+        limit,
+    )
+    return [
+        {
+            "sender_id": row["sender_id"],
+            "id": row["id"],
+            "date": row["date"].isoformat() if row["date"] else None,
+            "text": row["text"],
+            "has_media": row["has_media"],
+        }
+        for row in rows
+    ]
