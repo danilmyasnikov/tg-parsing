@@ -29,6 +29,15 @@ STATIC_DIR = Path(__file__).parent / "static"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler."""
+    # Helpful startup message: Uvicorn shows the bind address (0.0.0.0)
+    # which is the listener address. Inform the user to use localhost
+    # when opening the UI in a browser for local development.
+    try:
+        print("Web UI available at: http://localhost:8000 (bind: 0.0.0.0:8000)")
+        logger.info("Web UI available at: http://localhost:8000 (bind: 0.0.0.0:8000)")
+    except Exception:
+        # Avoid startup failure if logging/printing has issues
+        pass
     yield
     # Cleanup on shutdown
     await close_pool()
