@@ -12,3 +12,25 @@ __pycache__/
 exported_config.json
 # VS Code workspace settings
 .vscode/
+
+# Node / Vite
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Vite build/cache
+.vite/
+dist/
+webui/frontend/node_modules/
+webui/frontend/.vite/
+webui/frontend/dist/
+
+# macOS
+.DS_Store
+
+# Ignore built frontend assets by default. If you want to check production builds in,
+# remove this line.
+webui/backend/static/

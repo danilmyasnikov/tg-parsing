@@ -1,0 +1,27 @@
+{
+  "name": "webui",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A chat interface for analyzing Telegram channel messages using AI.",
+  "type": "module",
+  "notes": {
+    "about": "This package.json is for the frontend 'webui' only. It is marked private to avoid accidental publishing. JSON does not support comments, so this object documents fields for developers.",
+    "scripts": "dev: vite dev server (HMR) for development; build: produce production assets (point FastAPI to serve them); preview: locally serve built files; tsc:build: optional TypeScript compile.",
+    "usage": "Run 'npm install' in the webui folder, then 'npm run dev' for development or 'npm run build' to create static files for FastAPI.",
+    "note": "Remove or ignore this object if you plan to publish the package, although 'private: true' prevents publishing by default."
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "tsc:build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^25.2.2",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  }
+}

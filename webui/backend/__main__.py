@@ -6,7 +6,7 @@ import uvicorn
 def main():
     """Run the web UI server."""
     uvicorn.run(
-        "webui.app:app",
+        "webui.backend.app:app",
         host="0.0.0.0",
         port=8000,
         reload=True,
