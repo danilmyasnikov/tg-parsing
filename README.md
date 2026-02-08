@@ -109,8 +109,7 @@ Run the fetcher for a target id:
 
 Quick steps to run the `webui` chat interface locally (PowerShell):
 
-```powershell
-.Before starting the backend server, install frontend dependencies and build the production assets so FastAPI can serve them from `webui/backend/static`.
+Before starting the backend server, install frontend dependencies and build the production assets so FastAPI can serve them from `webui/backend/static`.
 
 1. Build frontend (produces files in `webui/backend/static`):
 
@@ -127,5 +126,3 @@ python -m webui.backend
 # or with uvicorn (module path includes `webui`):
 .\.venv\Scripts\python -m uvicorn webui.backend.app:app --reload --port 8000
 ```
-
-If you want to run in development mode with Vite's dev server (HMR), start the backend and then in a second terminal run `npm run dev` in `webui/frontend`.
