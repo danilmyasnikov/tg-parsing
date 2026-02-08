@@ -17,6 +17,11 @@ def get_dsn() -> str:
     return os.getenv("PG_DSN") or "postgresql://pguser:pgpass@localhost:5432/tgdata"
 
 
+def _safe_console(text: str) -> str:
+    # Avoid Windows console encoding errors (e.g., emoji in cp932).
+    return text.encode("ascii", "backslashreplace").decode("ascii")
+
+
 async def inspect(pg_dsn: str) -> None:
     try:
         conn = await asyncpg.connect(pg_dsn)
@@ -40,7 +45,12 @@ async def inspect(pg_dsn: str) -> None:
                 text_preview = (d.get("text") or "").replace("\n", " ")
                 if len(text_preview) > 200:
                     text_preview = text_preview[:200] + "…"
-                print(f"- sender_id={d.get('sender_id')} id={d.get('id')} date={d.get('date')} text_present={bool(d.get('text'))} text_preview={text_preview}")
+                text_preview = _safe_console(text_preview)
+                print(
+                    f"- sender_id={d.get('sender_id')} id={d.get('id')} "
+                    f"date={d.get('date')} text_present={bool(d.get('text'))} "
+                    f"text_preview={text_preview}"
+                )
 
         # Now run the same filtered query that the analyzer uses to see if
         # the date cutoff filters out rows unexpectedly.
