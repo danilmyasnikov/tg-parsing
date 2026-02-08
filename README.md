@@ -121,8 +121,9 @@ npm --prefix ./webui/frontend run build
 2. Activate your virtualenv and start the backend:
 
 ```powershell
-.\.venv\Scripts\Activate.ps1
-python -m webui.backend
-# or with uvicorn (module path includes `webui`):
+.\.venv\Scripts\python -m webui.backend
+```
+or with uvicorn (module path includes `webui`):
+```
 .\.venv\Scripts\python -m uvicorn webui.backend.app:app --reload --port 8000
 ```

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal, Optional
+
 from pydantic import BaseModel
 
 
@@ -27,3 +29,43 @@ class ModelInfo(BaseModel):
 
 class SelectedIdsRequest(BaseModel):
     sender_ids: list[str] = []
+
+
+class DBStatusResponse(BaseModel):
+    message_count: int
+    sender_count: int
+    latest_message_at: Optional[str] = None
+
+
+class DBClearResponse(BaseModel):
+    ok: bool
+    message: str
+
+
+class CollectorFetchRequest(BaseModel):
+    targets: list[str] = []
+    limit: int = 100
+
+
+class CollectorFetchDetail(BaseModel):
+    target: str
+    processed: int
+    error: Optional[str] = None
+
+
+class CollectorFetchResponse(BaseModel):
+    ok: bool
+    processed: int
+    details: list[CollectorFetchDetail] = []
+
+
+class AnalyzerRunRequest(BaseModel):
+    job: Literal["topics", "sentiment", "style"]
+    days_back: int = 30
+    limit: int = 1000
+    sender_ids: list[str] = []
+
+
+class AnalyzerRunResponse(BaseModel):
+    ok: bool
+    output: str

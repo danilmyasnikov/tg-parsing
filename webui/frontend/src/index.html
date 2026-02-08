@@ -3,78 +3,192 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TG-Parsing Chat</title>
+    <title>TG-Parsing Studio</title>
     <link rel="stylesheet" href="./styles.css">
   </head>
   <body>
-    <div class="chat-container">
-        <!-- Chat Header -->
-        <div class="chat-header">
-            <h1>TG-Parsing Assistant</h1>
-            <p class="subtitle">Analyze Telegram channel messages with AI</p>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark">TG</div>
+          <div class="brand-text">
+            <div class="brand-title">TG-Parsing Studio</div>
+            <div class="brand-subtitle">Generate original posts from Telegram signal</div>
+          </div>
         </div>
+        <div class="topbar-actions">
+          <button class="ghost-button" id="toggleSidebar">Sidebar</button>
+          <div class="status-pill" id="dbStatus">DB: checking...</div>
+          <div class="status-pill accent" id="activeModel">Model: ...</div>
+        </div>
+      </header>
 
-        <!-- Chat Messages Area -->
-        <div class="chat-messages" id="chatMessages">
-            <div class="welcome-message">
-                <div class="welcome-icon">💬</div>
-                <h2>Welcome!</h2>
-                <p>Select channels and ask questions about your Telegram messages.</p>
+      <div class="workspace">
+        <aside class="sidebar" id="sidebar">
+          <div class="sidebar-tabs">
+            <button class="tab-button active" data-tab="channels">Channels</button>
+            <button class="tab-button" data-tab="sessions">Sessions</button>
+            <button class="tab-button" data-tab="ops">Ops</button>
+          </div>
+
+          <div class="sidebar-panel active" data-panel="channels">
+            <div class="panel-header">
+              <h3>Channels</h3>
+              <button class="link-button" id="clearChannels">Clear</button>
             </div>
-        </div>
+            <div class="search-input">
+              <input id="channelSearch" type="text" placeholder="Search channels..." />
+            </div>
+            <div class="panel-summary" id="channelSummary">All channels selected</div>
+            <div class="channel-list" id="channelList">
+              <div class="loading">Loading channels...</div>
+            </div>
+            <div class="panel-subsection">
+              <h4>Recently active</h4>
+              <div class="recent-list" id="recentChannels">
+                <div class="loading">Waiting for data...</div>
+              </div>
+            </div>
+          </div>
 
-        <!-- Input Area -->
-        <div class="chat-input-area">
-            <!-- Selection Controls -->
-            <div class="selection-controls">
-                <!-- Channel Selector -->
-                <div class="selector-wrapper">
-                    <button class="selector-button" id="channelSelector">
-                        <span class="selector-icon">📢</span>
-                        <span class="selector-text" id="channelSelectorText">All channels</span>
-                        <span class="selector-arrow">▼</span>
-                    </button>
-                    <div class="selector-dropdown" id="channelDropdown">
-                        <div class="dropdown-header">
-                            <span>Select Channels</span>
-                            <button class="clear-btn" id="clearChannels">Clear all</button>
-                        </div>
-                        <div class="dropdown-list" id="channelList">
-                            <div class="loading">Loading channels...</div>
-                        </div>
-                    </div>
+          <div class="sidebar-panel" data-panel="sessions">
+            <div class="panel-header">
+              <h3>Sessions</h3>
+              <button class="link-button" id="newSession">New</button>
+            </div>
+            <div class="session-list" id="sessionList">
+              <div class="loading">No sessions yet.</div>
+            </div>
+          </div>
+
+          <div class="sidebar-panel" data-panel="ops">
+            <div class="panel-header">
+              <h3>Ops</h3>
+              <button class="link-button" id="refreshDb">Refresh</button>
+            </div>
+
+            <div class="ops-card">
+              <h4>Database</h4>
+              <p>Manage your Postgres message store.</p>
+              <div class="ops-actions">
+                <button class="ghost-button" id="refreshDbSecondary">Refresh status</button>
+                <button class="danger-button" id="clearDb">Clear messages</button>
+              </div>
+            </div>
+
+            <div class="ops-card">
+              <h4>Collector</h4>
+              <label>Targets</label>
+              <textarea id="collectorTargets" rows="3" placeholder="channel username or numeric id (comma separated)"></textarea>
+              <div class="inline-input">
+                <label>Limit per target</label>
+                <input id="collectorLimit" type="number" min="1" value="100" />
+              </div>
+              <button class="primary-button" id="collectorRun">Fetch messages</button>
+            </div>
+
+            <div class="ops-card">
+              <h4>Analyzer</h4>
+              <label>Job</label>
+              <select id="analyzerJob">
+                <option value="topics">Topics</option>
+                <option value="sentiment">Sentiment</option>
+                <option value="style">Style</option>
+              </select>
+              <div class="inline-row">
+                <div class="inline-input">
+                  <label>Days back</label>
+                  <input id="analyzerDays" type="number" min="1" value="30" />
                 </div>
+                <div class="inline-input">
+                  <label>Limit</label>
+                  <input id="analyzerLimit" type="number" min="1" value="500" />
+                </div>
+              </div>
+              <label class="checkbox">
+                <input id="analyzerUseSelected" type="checkbox" checked />
+                Use selected channels
+              </label>
+              <button class="primary-button" id="analyzerRun">Run analysis</button>
+            </div>
 
-                <!-- Model Selector -->
-                <div class="selector-wrapper">
-                    <button class="selector-button" id="modelSelector">
-                        <span class="selector-icon">🤖</span>
-                        <span class="selector-text" id="modelSelectorText">Gemini 2.0 Flash</span>
-                        <span class="selector-arrow">▼</span>
+            <div class="ops-card">
+              <h4>Ops log</h4>
+              <div class="log-list" id="opsLog">
+                <div class="loading">No ops activity yet.</div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <main class="main">
+          <section class="compose">
+            <div class="section-header">
+              <div>
+                <h2>Compose</h2>
+                <p>Combine signal from Telegram with structured prompts.</p>
+              </div>
+            </div>
+
+            <div class="preset-bar" id="presetBar"></div>
+
+            <div class="prompt-window">
+              <textarea
+                id="promptInput"
+                rows="1"
+                placeholder="Describe the post you want to generate..."
+                aria-label="Prompt"
+              ></textarea>
+              <div class="prompt-controls">
+                <div class="control-pill" data-hint="Model">
+                  <div class="selector-wrapper">
+                    <button class="selector-button" id="modelSelector" aria-label="Model">
+                      <span id="modelSelectorText">Loading models...</span>
+                      <span class="selector-arrow">▼</span>
                     </button>
                     <div class="selector-dropdown" id="modelDropdown">
-                        <div class="dropdown-header">
-                            <span>Select Model</span>
-                        </div>
-                        <div class="dropdown-list" id="modelList">
-                            <div class="loading">Loading models...</div>
-                        </div>
+                      <div class="dropdown-list" id="modelList">
+                        <div class="loading">Loading models...</div>
+                      </div>
                     </div>
+                  </div>
                 </div>
-            </div>
 
-            <!-- Message Input -->
-            <div class="input-row">
-                <textarea 
-                    id="messageInput" 
-                    placeholder="Ask anything about your Telegram messages..."
-                    rows="1"
-                ></textarea>
-                <button class="send-button" id="sendButton" disabled>
-                    <span class="send-icon">▶</span>
-                </button>
+                <div class="control-pill" data-hint="Context limit">
+                  <input id="messageLimit" type="number" min="1" value="120" aria-label="Context limit" />
+                </div>
+
+                <div class="control-pill" data-hint="Channels">
+                  <div class="control-static" id="contextSummary">All channels</div>
+                </div>
+              </div>
+
+              <button type="button" class="send-fab" id="generateButton" aria-label="Generate post" disabled>🛩️</button>
             </div>
-        </div>
+          </section>
+
+          <section class="results">
+            <div class="section-header">
+              <div>
+                <h2>Results</h2>
+                <p id="resultsMeta">No generations yet.</p>
+              </div>
+              <div class="header-actions">
+                <button class="ghost-button" id="viewAllResults">View all</button>
+              </div>
+            </div>
+            <div class="results-list" id="resultsList">
+              <div class="empty-state">Run your first generation to see results.</div>
+            </div>
+            <div class="run-log">
+              <h3>Run log</h3>
+              <div class="log-list" id="runLog">
+                <div class="loading">Waiting for activity...</div>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
     </div>
 
     <script type="module" src="/main.ts"></script>
