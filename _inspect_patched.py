@@ -1,43 +1,69 @@
 import json, os
+from pathlib import Path
+
+base = Path(__file__).resolve().parent / 'analyzer' / 'runs'
 
 runs = {
-    "patched-topics-100": "Patched Topics",
+    "prod-topics": "Topics",
+    "prod-style": "Style",
+    "prod-post": "Post",
 }
 
 for run_id, label in runs.items():
-    run = os.path.join(r'C:\Users\Danil\Desktop\TG-parsing\analyzer\runs', run_id)
+    run = base / run_id
+    if not run.exists():
+        print(f"=== {label} ({run_id}) === NOT FOUND\n")
+        continue
+
     print(f"=== {label} ({run_id}) ===")
-    
+
     # Final output
-    final = open(os.path.join(run, 'final.txt'), encoding='utf-8').read()
-    data = json.loads(final)
-    print("Final topics:")
-    for i, t in enumerate(data, 1):
-        print(f"  {i}. {t}")
-    
+    final_path = run / 'final.txt'
+    post_path = run / 'post.txt'
+    out_path = post_path if post_path.exists() else final_path
+
+    if out_path.exists():
+        text = open(out_path, encoding='utf-8').read().strip()
+        try:
+            data = json.loads(text)
+            if isinstance(data, list):
+                print("Final items:")
+                for i, t in enumerate(data[:15], 1):
+                    if isinstance(t, dict):
+                        print(f"  {i}. {t.get('topic', t)}")
+                    else:
+                        print(f"  {i}. {t}")
+                if len(data) > 15:
+                    print(f"  ... and {len(data) - 15} more")
+            else:
+                print("Final output:")
+                print(f"  {json.dumps(data, ensure_ascii=False, indent=2)[:500]}")
+        except json.JSONDecodeError:
+            print("Final text:")
+            print(f"  {text[:500]}")
+            if len(text) > 500:
+                print(f"  ... ({len(text)} chars total)")
+    else:
+        print("  No output file found")
+
     # Map batches
-    print("\nMap batches:")
-    for line in open(os.path.join(run, 'map_outputs.jsonl'), encoding='utf-8'):
-        rec = json.loads(line)
-        print(f"  Batch {rec['batch_index']}: {rec['message_count']} msgs, parse_err={rec['parse_error']}")
-        if rec.get('result'):
-            for item in rec['result'][:4]:
-                if isinstance(item, dict):
-                    print(f"    - {item.get('topic', '?')} (count~{item.get('count_hint', '?')})")
-    
-    # Reduce rounds
-    print("\nReduce rounds:")
-    for line in open(os.path.join(run, 'reduce_outputs.jsonl'), encoding='utf-8'):
-        rec = json.loads(line)
-        print(f"  Round {rec['round']}: chunk_size={rec['chunk_size']}")
-    
+    map_path = run / 'map_outputs.jsonl'
+    if map_path.exists():
+        print("\nMap batches:")
+        for line in open(map_path, encoding='utf-8'):
+            rec = json.loads(line)
+            print(f"  Batch {rec['batch_index']}: {rec['message_count']} msgs, parse_err={rec['parse_error']}")
+
     # State
-    state = json.load(open(os.path.join(run, 'state.json'), encoding='utf-8'))
-    print(f"\nFinal state: phase={state.get('phase')}, reduce_rounds={state.get('reduce_round')}, chunks={state.get('chunks_in_round')}")
-    
+    state_path = run / 'state.json'
+    if state_path.exists():
+        state = json.load(open(state_path, encoding='utf-8'))
+        print(f"\nState: phase={state.get('phase')}, reduce_rounds={state.get('reduce_round')}, "
+              f"errors={state.get('errors', 0)}")
+
     # Errors
-    err_path = os.path.join(run, 'errors.jsonl')
-    if os.path.exists(err_path) and os.path.getsize(err_path) > 0:
+    err_path = run / 'errors.jsonl'
+    if err_path.exists() and os.path.getsize(err_path) > 0:
         print("\nERRORS:")
         for line in open(err_path, encoding='utf-8'):
             print(f"  {json.loads(line)}")

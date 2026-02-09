@@ -1,10 +1,11 @@
 import json, os
+from pathlib import Path
 
-run = r'C:\Users\Danil\Desktop\TG-parsing\analyzer\runs\real-style-100'
-final_path = os.path.join(run, 'final.txt')
-map_path = os.path.join(run, 'map_outputs.jsonl')
+run = Path(__file__).resolve().parent / 'analyzer' / 'runs' / 'prod-style'
+final_path = run / 'final.txt'
+map_path = run / 'map_outputs.jsonl'
 
-if os.path.exists(final_path):
+if final_path.exists():
     print('=== FINAL STYLE ===')
     print(open(final_path, encoding='utf-8').read())
     print()
@@ -19,3 +20,4 @@ if os.path.exists(final_path):
             print(f'    {json.dumps(rec["result"], ensure_ascii=False)[:300]}')
 else:
     print('Run not found or not complete yet')
+    print(f'Looked in: {run}')

@@ -1,8 +1,14 @@
 import asyncio
+import os
 import asyncpg
+from dotenv import load_dotenv
+
+load_dotenv()
+
+PG_DSN = os.environ.get("PG_DSN", "postgresql://pguser:pgpass@localhost:5432/tgdata")
 
 async def main():
-    conn = await asyncpg.connect('postgresql://pguser:pgpass@localhost:5432/tgdata')
+    conn = await asyncpg.connect(PG_DSN)
     count = await conn.fetchval('SELECT COUNT(*) FROM messages')
     print(f'Total messages: {count}')
     
